@@ -1,0 +1,62 @@
+
+### BUZZ FUNCTIONS ##
+
+function move(){
+	acc_left = 0
+	acc_right = 0
+
+	c = 0
+	while(c < 4) {
+		val =  proximity[c].value * ((math.pi - math.abs(proximity[c].angle)) / math.pi)
+		acc_left = acc_left + val
+		c = c + 1
+	}
+
+	while(c < 8) {
+		val =  proximity[c].value * ((math.abs(proximity[c].angle)) / math.pi)
+		acc_right = acc_right + val
+		c = c + 1
+	}
+	set_wheels(10 * (0.7 - acc_right), 10 * (0.7 - acc_left))
+}
+
+function init() {
+	math.rng.setseed(id)
+  MAX_STEP = math.rng.uniform(5, 500)
+	curr_step = 0
+
+	#swarm_1 = swarm.create(1)
+	#swarm_1.join()
+
+	stig = stigmergy.create(1)
+	stig.put(id, 'R')
+	start_size = 0
+}
+
+
+function step() {
+	if (curr_step < 4){
+		start_size = stig.size()
+	}
+
+	if (curr_step == MAX_STEP){
+		stig.put(string.tostring(id), 'D')
+		done = true
+	}
+	log(start_size)
+	if (stig.size() == 2*start_size) {
+		set_wheels(0.0, 0.0)
+		set_leds(0, 255, 0)
+	} else {
+		move()
+	}
+
+	curr_step = curr_step + 1
+}
+
+
+function reset() {
+}
+
+function destroy() {
+}
