@@ -5,12 +5,6 @@
 /****************************************/
 /****************************************/
 
-SPLoopFunctions::SPLoopFunctions() 
-{}
-
-/****************************************/
-/****************************************/
-
 void SPLoopFunctions::Init(TConfigurationNode& t_node) {
      m_pcFloor = &GetSpace().GetFloorEntity();
 }
@@ -26,7 +20,7 @@ void SPLoopFunctions::Reset() {
 /****************************************/
 
 void SPLoopFunctions::Destroy() {
-   /* Close the file */
+    /* Close the file */
 
 }
 
@@ -48,7 +42,7 @@ CColor SPLoopFunctions::GetFloorColor(const CVector2& c_position_on_plane) {
 /****************************************/
 
 void SPLoopFunctions::PreStep() {
-m_pcFloor->SetChanged();
+    m_pcFloor->SetChanged();
 }
 
 /****************************************/
