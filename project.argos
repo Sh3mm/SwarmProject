@@ -33,6 +33,10 @@
     </buzz_controller_kheperaiv>
 
   </controllers>
+  
+    <loop_functions library="./loop_funcs/build/libSwarmProject_loop.so"
+                  label="SP_loop_functions" />
+
 
   <!-- *********************** -->
   <!-- * Arena configuration * -->
@@ -51,7 +55,10 @@
     <box id="wall_west" size="0.1,10,0.5" movable="false">
       <body position="-5,0,0" orientation="0,0,0" />
     </box>
-
+    
+    <floor id="floor"
+           source="loop_functions"
+           pixels_per_meter="50" />
     <!--
         You can distribute entities randomly. Here, we distribute
         10 foot-bots in this way:

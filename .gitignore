@@ -1,3 +1,14 @@
+# Buzz specific files
+
 **/*.basm
 **/*.bdb
 **/*.bo
+
+# Build files
+
+**/build/
+
+# IDEs files
+
+**/.idea/
+**/.vscode/
