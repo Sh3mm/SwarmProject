@@ -22,7 +22,7 @@ function move(){
 
 function init() {
 	math.rng.setseed(id)
-  MAX_STEP = math.rng.uniform(5, 500)
+  	MAX_STEP = math.rng.uniform(5, 500)
 	curr_step = 0
 
 	#swarm_1 = swarm.create(1)
