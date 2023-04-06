@@ -29,7 +29,11 @@
         <positioning         implementation="default" />
         <kheperaiv_light      implementation="rot_z_only" show_rays="true" />
       </sensors>
-      	<params/>
+      <params
+        bytecode_file="buzz_scripts/main.bo"
+        debug_file="buzz_scripts/main.bdb">
+
+      </params>
     </buzz_controller_kheperaiv>
 
   </controllers>
@@ -110,7 +114,7 @@
       <user_functions label="buzz_qt" />
 	<camera>
 	  <placements>
-	    <placement index="0" position="-0.18,-0.25,46.5" look_at="-0.17,-0.25,45" up="1,0,0" lens_focal_length="120"/>
+	    <placement index="0" position="0,0,45" look_at="0,0,0" up="1,0,0" lens_focal_length="120"/>
 	  </placements>
 	</camera>
 
