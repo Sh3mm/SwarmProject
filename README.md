@@ -59,5 +59,6 @@ echo "export BUZZ_INCLUDE_PATH=~/SwarmProject/buzz_scripts/include/" >> ~/.bashr
 ## Launch the simultation
 
 ```
+cd SwarmProject/launch
 argos3 -c project.argos
 ```
