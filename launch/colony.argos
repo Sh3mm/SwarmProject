@@ -30,16 +30,14 @@
         <!-- <kheperaiv_light      implementation="rot_z_only" show_rays="true" /> -->
       </sensors>
       <params
-        bytecode_file="../buzz_scripts/main.bo"
-        debug_file="../buzz_scripts/main.bdb">
-
+        bytecode_file="buzz_scripts/main.bo"
+        debug_file="buzz_scripts/main.bdb">
       </params>
     </buzz_controller_kheperaiv>
 
   </controllers>
   
-    <loop_functions library="../loop_funcs/build/libSwarmProject_loop.so"
-                  label="SP_loop_functions" />
+  <loop_functions library="loop_funcs/build/libSwarmProject_loop.so" abel="SP_loop_functions" />
 
 
   <!-- *********************** -->
