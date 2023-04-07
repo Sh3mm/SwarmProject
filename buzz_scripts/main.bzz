@@ -3,31 +3,35 @@ include "utils/math.bzz"
 
 function init() {
     STEP_SIZE = 0.1     # According to the launch file
-    ROBOT_VELOCITY = 140
+    ROBOT_VELOCITY = 50
 
     WORLD_LENGTH = 20
     WORLD_HEIGHT = 20
     WORLD_CENTER = {.x = 0, .y = 0}
     
-    CELL_SIZE = 0.07    # Half of Khepera
+    CELL_SIZE = 0.07    # Half of Khepera diameter
     
     X_CELLS_NUMBER = math.round_up(WORLD_LENGTH / CELL_SIZE)
     Y_CELLS_NUMBER = math.round_up(WORLD_HEIGHT / CELL_SIZE)
     
     pheromone_grid = stigmergy.create(1)
+
+    step_count = 0
 }
 
 function step() {
     current_cell = cell_index(pose.position)
-    if (current_cell != last_cell){
-        pheromone_amount = pheromone_grid.get(current_cell)
 
-        pheromone_grid.put(current_cell, pheromone_amount + 2)
+    if (current_cell != last_cell){     # Updates the cell status when the robot moves in (collects, calculates, shares)
+        cell_state = pheromone_grid.get(current_cell)
+        new_cell_state = compute_cell_state(cell_state)
+        pheromone_grid.put(current_cell, {.timestamp = step_count, .type = new_cell_state.type, .amount = new_cell_state.amount})
     }
 
     robot_move(0)
 
     last_cell = current_cell
+    step_count = step_count + 1
 }
 
 function reset() {
@@ -48,7 +52,7 @@ function robot_move(heading_instruction){
 function cell_index(position){
     # Return the cell index. Return nil if the position is outside the world.
 
-    shifted_position  = {}  # Consider the origin in the lower left corner for convenience
+    var shifted_position  = {}  # Consider the origin in the lower left corner for convenience
 
     shifted_position .x = position.x - (WORLD_CENTER.x - WORLD_LENGTH / 2)
     shifted_position .y = position.y - (WORLD_CENTER.y - WORLD_HEIGHT / 2)
@@ -57,8 +61,21 @@ function cell_index(position){
         log("WARNING cell_index() : Map limits exceeded")
         return nil
     } else {
-        x_index = math.round_up(shifted_position .x / CELL_SIZE)
-        y_index = math.round_up(shifted_position .y / CELL_SIZE)
+        var x_index = math.round_up(shifted_position .x / CELL_SIZE)
+        var y_index = math.round_up(shifted_position .y / CELL_SIZE)
         return (x_index + (y_index - 1) * X_CELLS_NUMBER)
     }
+}
+
+function compute_cell_state(current_cell_state){
+    # Return the new type and amount of pheromone in the cell.
+    # TODO: implement all the pheromone behavior here
+
+    if (current_cell_state != nil){
+        var last_modification = current_cell_state.timestamp
+        var type = current_cell_state.type
+        var amount = current_cell_state.amount
+    }
+    
+    return {.type = "home", .amount = 5}
 }
