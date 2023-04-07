@@ -1,13 +1,64 @@
 include "utils/vec2.bzz"
+include "utils/math.bzz"
 
 function init() {
+    STEP_SIZE = 0.1     # According to the launch file
+    ROBOT_VELOCITY = 140
+
+    WORLD_LENGTH = 20
+    WORLD_HEIGHT = 20
+    WORLD_CENTER = {.x = 0, .y = 0}
+    
+    CELL_SIZE = 0.07    # Half of Khepera
+    
+    X_CELLS_NUMBER = math.round_up(WORLD_LENGTH / CELL_SIZE)
+    Y_CELLS_NUMBER = math.round_up(WORLD_HEIGHT / CELL_SIZE)
+    
+    pheromone_grid = stigmergy.create(1)
 }
 
-function step() {	
+function step() {
+    current_cell = cell_index(pose.position)
+    if (current_cell != last_cell){
+        pheromone_amount = pheromone_grid.get(current_cell)
+
+        pheromone_grid.put(current_cell, pheromone_amount + 2)
+    }
+
+    robot_move(0)
+
+    last_cell = current_cell
 }
 
 function reset() {
 }
 
 function destroy() {
+}
+
+function robot_move(heading_instruction){
+    # Move robot at ROBOT_VELOCITY speed with heading_instruction heading.
+    # Adaptation of equation (3).
+
+    var velocity = math.vec2.newp(ROBOT_VELOCITY, heading_instruction)  # Global velocity vector
+    var velocity_robot = math.vec2.rotate(velocity, -pose.orientation.yaw)  # Robot velocity vector
+    goto(velocity_robot.x, velocity_robot.y)
+}
+
+function cell_index(position){
+    # Return the cell index. Return nil if the position is outside the world.
+
+    shifted_position  = {}  # Consider the origin in the lower left corner for convenience
+
+    shifted_position .x = position.x - (WORLD_CENTER.x - WORLD_LENGTH / 2)
+    shifted_position .y = position.y - (WORLD_CENTER.y - WORLD_HEIGHT / 2)
+
+    if (shifted_position .x <= 0 or shifted_position .x > WORLD_LENGTH or shifted_position .y <= 0 or shifted_position .y > WORLD_HEIGHT){
+        log("WARNING cell_index() : Map limits exceeded")
+        return nil
+    } else {
+        x_index = math.round_up(shifted_position .x / CELL_SIZE)
+        y_index = math.round_up(shifted_position .y / CELL_SIZE)
+        return (x_index + (y_index - 1) * X_CELLS_NUMBER)
+    }
 }
