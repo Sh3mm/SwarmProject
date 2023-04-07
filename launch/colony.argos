@@ -41,7 +41,7 @@
 
   </controllers>
   
-  <loop_functions library="loop_funcs/build/libSwarmProject_loop.so" abel="SP_loop_functions" />
+  <loop_functions library="loop_funcs/build/libSwarmProject_loop.so" label="SP_loop_functions" />
 
 
   <!-- *********************** -->
