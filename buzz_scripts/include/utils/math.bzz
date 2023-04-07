@@ -1,0 +1,8 @@
+math.round_up = function(num){
+    remainder = num % 1
+    if (remainder == 0){
+        return num
+    } else {
+        return num - remainder + 1
+    }
+}
