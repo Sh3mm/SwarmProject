@@ -17,30 +17,59 @@ function init() {
 
     DETRACTOR_FRACTION = 0
 
+    # TODO: Define home and food position and radius
+
     ## Initialization
     X_CELLS_NUMBER = math.round_up(WORLD_LENGTH / CELL_SIZE)
     Y_CELLS_NUMBER = math.round_up(WORLD_HEIGHT / CELL_SIZE)
     
     pheromone_grid = stigmergy.create(1)
+    # TODO: Mark home and food cells with specific pheromone, like "home_base" and "food_source" according to home and food position and radius
 
     # TODO: Adjusts the number of detractors according to DETRACTOR_FRACTION
-    robot_state = {.role = "cooperator", .state = "to_food", .pheromone_type = "home", .steps_since_poi = 0}    # poi : point of interest i.e. home or food
+    robot_state = {.role = "cooperator", .state = "to_food", .pheromone_type = "home", .last_poi_timestamp = 0}    # poi : point of interest i.e. home or food
 
     step_count = 0
 }
 
 function step() {
-    current_cell = cell_index(pose.position)
+    current_cell_index = get_cell_index(pose.position)
+    
+    if (current_cell_index != last_cell_index){     # Updates the cell state once, when the robot moves out
+        cell_state = pheromone_grid.get(last_cell_index)
 
-    if (current_cell != last_cell){     # Updates the cell status when the robot moves in (collects, calculates, shares)
-        cell_state = pheromone_grid.get(current_cell)
-        new_cell_state = compute_cell_state(cell_state)
-        pheromone_grid.put(current_cell, {.timestamp = step_count, .type = new_cell_state.type, .intensity = new_cell_state.intensity})
-    }
+        if (cell_state != nil){
+            if (cell_state.type == "home_base"){
+                if (robot_state.role == "cooperator"){
+                    robot_state.last_poi_timestamp = step_count
+                    robot_state.state = "to_food"
+                    robot_state.pheromone_type = "home"
+
+                } else{
+                    # TODO: Add what a detractor does when it passes through the home base
+                }
+
+            } else if (cell_state.type == "food_source"){
+                if (robot_state.role == "cooperator"){
+                    robot_state.last_poi_timestamp = step_count
+                    robot_state.state = "to_home"
+                    robot_state.pheromone_type = "food"
+
+                } else {
+                    # TODO: Add what a detractor does when it passes through a food source
+                }
+
+            } else {
+                update_cell_state(cell_state)
+            }
+        } else {
+            update_cell_state(cell_state)
+        }
+    } 
 
     robot_move(0) # TODO: Implement movement according to the pheromone grid
 
-    last_cell = current_cell
+    last_cell_index = current_cell_index
     step_count = step_count + 1
 }
 
@@ -59,7 +88,7 @@ function robot_move(heading_instruction){
     goto(velocity_robot.x, velocity_robot.y)
 }
 
-function cell_index(position){
+function get_cell_index(position){
     # Return the cell index. Return nil if the position is outside the world.
 
     var shifted_position  = {}  # Consider the origin in the lower left corner for convenience
@@ -68,7 +97,7 @@ function cell_index(position){
     shifted_position .y = position.y - (WORLD_CENTER.y - WORLD_HEIGHT / 2)
 
     if (shifted_position .x <= 0 or shifted_position .x > WORLD_LENGTH or shifted_position .y <= 0 or shifted_position .y > WORLD_HEIGHT){
-        log("WARNING cell_index() : Map limits exceeded")
+        log("WARNING get_cell_index() : Map limits exceeded")
         return nil
     } else {
         var x_index = math.round_up(shifted_position .x / CELL_SIZE)
@@ -77,11 +106,12 @@ function cell_index(position){
     }
 }
 
-function compute_cell_state(current_cell_state){
+function update_cell_state(current_cell_state){
     # Return the new type and intensity of pheromone in the cell.
     # TODO: implement behavior with detractors pheromones
 
     var new_cell_state = {}
+    var steps_since_poi = step_count - robot_state.last_poi_timestamp
 
     if (robot_state.role == "cooperator"){
         if (current_cell_state != nil){
@@ -91,25 +121,25 @@ function compute_cell_state(current_cell_state){
     
             if (cell_type == robot_state.pheromone_type){   # Same pheromone, keep the maximum
                 new_cell_state.type = cell_type
-                new_cell_state.intensity = math.max(cell_intensity, pheromone_intensity(robot_state.steps_since_poi))
+                new_cell_state.intensity = math.max(cell_intensity, pheromone_intensity(steps_since_poi))
 
             } else {    # Different pheromone, keep the new one
                 new_cell_state.type = robot_state.pheromone_type
-                new_cell_state.intensity = pheromone_intensity(robot_state.steps_since_poi)
+                new_cell_state.intensity = pheromone_intensity(steps_since_poi)
             }
     
         } else {    # If the cell is empty
             new_cell_state.type = robot_state.pheromone_type
-            new_cell_state.intensity = pheromone_intensity(robot_state.steps_since_poi)
+            new_cell_state.intensity = pheromone_intensity(steps_since_poi)
         }
 
     } else {
         # TODO: Implement detractor deposit behavior
         new_cell_state.type = "food"
-        new_cell_state.intensity = pheromone_intensity(robot_state.steps_since_poi)
+        new_cell_state.intensity = pheromone_intensity(steps_since_poi)
     }
     
-    return new_cell_state
+    pheromone_grid.put(last_cell_index, {.timestamp = step_count, .type = new_cell_state.type, .intensity = new_cell_state.intensity}) # Share timestamp so that the next one can calculate the evaporation that occurs
 }
 
 function pheromone_intensity(steps_number){
