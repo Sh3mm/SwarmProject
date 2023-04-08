@@ -2,6 +2,7 @@ include "utils/vec2.bzz"
 include "utils/math.bzz"
 
 function init() {
+    ## Parameters (From the configuration file)
     STEP_SIZE = 0.1     # According to the launch file
     ROBOT_VELOCITY = 50
 
@@ -11,10 +12,19 @@ function init() {
     
     CELL_SIZE = 0.07    # Half of Khepera diameter
     
+    LAMBDA = 0.01 * STEP_SIZE / 0.016   # Adjusts to have the same rate per second as in the article
+    EVAPORATION_RATE = 5.0     # Between 0 and 1000 in the article, same with different step size ?
+
+    DETRACTOR_FRACTION = 0
+
+    ## Initialization
     X_CELLS_NUMBER = math.round_up(WORLD_LENGTH / CELL_SIZE)
     Y_CELLS_NUMBER = math.round_up(WORLD_HEIGHT / CELL_SIZE)
     
     pheromone_grid = stigmergy.create(1)
+
+    # TODO: Adjusts the number of detractors according to DETRACTOR_FRACTION
+    robot_state = {.role = "cooperator", .state = "to_food", .pheromone_type = "home", .steps_since_poi = 0}    # poi : point of interest i.e. home or food
 
     step_count = 0
 }
@@ -25,10 +35,10 @@ function step() {
     if (current_cell != last_cell){     # Updates the cell status when the robot moves in (collects, calculates, shares)
         cell_state = pheromone_grid.get(current_cell)
         new_cell_state = compute_cell_state(cell_state)
-        pheromone_grid.put(current_cell, {.timestamp = step_count, .type = new_cell_state.type, .amount = new_cell_state.amount})
+        pheromone_grid.put(current_cell, {.timestamp = step_count, .type = new_cell_state.type, .intensity = new_cell_state.intensity})
     }
 
-    robot_move(0)
+    robot_move(0) # TODO: Implement movement according to the pheromone grid
 
     last_cell = current_cell
     step_count = step_count + 1
@@ -42,7 +52,7 @@ function destroy() {
 
 function robot_move(heading_instruction){
     # Move robot at ROBOT_VELOCITY speed with heading_instruction heading.
-    # Adaptation of equation (3).
+    # Equation (3) adaptation.
 
     var velocity = math.vec2.newp(ROBOT_VELOCITY, heading_instruction)  # Global velocity vector
     var velocity_robot = math.vec2.rotate(velocity, -pose.orientation.yaw)  # Robot velocity vector
@@ -68,14 +78,50 @@ function cell_index(position){
 }
 
 function compute_cell_state(current_cell_state){
-    # Return the new type and amount of pheromone in the cell.
-    # TODO: implement all the pheromone behavior here
+    # Return the new type and intensity of pheromone in the cell.
+    # TODO: implement behavior with detractors pheromones
 
-    if (current_cell_state != nil){
-        var last_modification = current_cell_state.timestamp
-        var type = current_cell_state.type
-        var amount = current_cell_state.amount
+    var new_cell_state = {}
+
+    if (robot_state.role == "cooperator"){
+        if (current_cell_state != nil){
+            var steps_since_last_deposit = step_count - current_cell_state.timestamp
+            var cell_type = current_cell_state.type
+            var cell_intensity = pheromone_evaporation(current_cell_state.intensity, steps_since_last_deposit)
+    
+            if (cell_type == robot_state.pheromone_type){   # Same pheromone, keep the maximum
+                new_cell_state.type = cell_type
+                new_cell_state.intensity = math.max(cell_intensity, pheromone_intensity(robot_state.steps_since_poi))
+
+            } else {    # Different pheromone, keep the new one
+                new_cell_state.type = robot_state.pheromone_type
+                new_cell_state.intensity = pheromone_intensity(robot_state.steps_since_poi)
+            }
+    
+        } else {    # If the cell is empty
+            new_cell_state.type = robot_state.pheromone_type
+            new_cell_state.intensity = pheromone_intensity(robot_state.steps_since_poi)
+        }
+
+    } else {
+        # TODO: Implement detractor deposit behavior
+        new_cell_state.type = "food"
+        new_cell_state.intensity = pheromone_intensity(robot_state.steps_since_poi)
     }
     
-    return {.type = "home", .amount = 5}
+    return new_cell_state
+}
+
+function pheromone_intensity(steps_number){
+    # Return the robot pheromone intensity
+    # Equation (1) implementation
+
+    return (1000 * math.exp(- LAMBDA * steps_number))
+}
+
+function pheromone_evaporation(intensity, steps_number){
+    # Return the pheromone intensity with the evaporation that has occurred since the last deposit
+    # Equation (2) implementation
+
+    return (intensity - EVAPORATION_RATE * steps_number)
 }
