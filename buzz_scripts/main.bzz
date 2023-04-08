@@ -2,7 +2,8 @@ include "utils/vec2.bzz"
 include "utils/math.bzz"
 
 function init() {
-    ## Parameters (From the configuration file)
+    ## Parameters 
+    # Get parameters from the config file
     STEP_SIZE = 0.1     # According to the launch file
     ROBOT_VELOCITY = 50
 
@@ -67,7 +68,7 @@ function step() {
         }
     } 
 
-    robot_move(0) # TODO: Implement movement according to the pheromone grid
+    robot_move(0) # TODO: Implement movement according to the pheromone grid and rebound on the world edges.
 
     last_cell_index = current_cell_index
     step_count = step_count + 1
