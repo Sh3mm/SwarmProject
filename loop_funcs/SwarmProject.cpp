@@ -6,7 +6,17 @@
 /****************************************/
 
 void SPLoopFunctions::Init(TConfigurationNode& t_node) {
-     m_pcFloor = &GetSpace().GetFloorEntity();
+    m_pcFloor = &GetSpace().GetFloorEntity();
+
+    auto goal_node = GetNode(t_node, "goal");
+    GetNodeAttributeOrDefault(goal_node, "x", m_goalX, 0.);
+    GetNodeAttributeOrDefault(goal_node, "y", m_goalY, 0.);
+    GetNodeAttributeOrDefault(goal_node, "radius", m_goalRadius, 0.);
+
+    auto home_node = GetNode(t_node, "home");
+    GetNodeAttributeOrDefault(home_node, "x", m_homeX, 0.);
+    GetNodeAttributeOrDefault(home_node, "y", m_homeY, 0.);
+    GetNodeAttributeOrDefault(home_node, "radius", m_homeRadius, 1.);
 }
 
 /****************************************/
@@ -28,13 +38,21 @@ void SPLoopFunctions::Destroy() {
 /****************************************/
 
 CColor SPLoopFunctions::GetFloorColor(const CVector2& c_position_on_plane) {
-    if( // center or starting zone
-        (c_position_on_plane.GetY() > -1.0f && c_position_on_plane.GetY() < 1.0f) &&
-        (c_position_on_plane.GetX() > -1.0f && c_position_on_plane.GetX() < 1.0f)
-    ) {
-        return CColor::BLUE;
-    }
 
+    const Real y = c_position_on_plane.GetY();
+    const Real x = c_position_on_plane.GetX();
+
+    if( // Home Area
+            (x < m_homeX + m_homeRadius && x > m_homeX - m_homeRadius) &&
+            (y < m_homeY + m_homeRadius && y > m_homeY - m_homeRadius)
+    ) { return CColor::BLUE; }
+
+    if( // Goal Area
+            (x < m_goalX + m_goalRadius && x > m_goalX - m_goalRadius) &&
+            (y < m_goalY + m_goalRadius && y > m_goalY - m_goalRadius)
+    ) { return CColor::GREEN; }
+
+    //default
     return CColor::WHITE;
 }
 

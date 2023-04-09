@@ -20,33 +20,27 @@ pkg_check_modules(BUZZ REQUIRED buzz)
 
 include_directories(${CMAKE_SOURCE_DIR} ${ARGOS_INCLUDE_DIRS} ${BUZZ_INCLUDE_DIR})
 
-# find_package(Lua52)
-# if(Lua52_FOUND)
-#   include_directories(${LUA_INCLUDE_DIR})
-# endif(Lua52_FOUND)
-
-
 # Set ARGoS link dir
 link_directories(${ARGOS_LIBRARY_DIRS} ${BUZZ_LIBRARY_DIRS})
 
 # Compile target
-add_library(SwarmProject_loop SHARED 
-    SwarmProject.h 
-    # buzz_utils.h 
-    SwarmProject.cpp
+file(GLOB SRC "*.h" "*.cpp")
+
+add_library(SwarmProject SHARED
+        ${SRC}
 )
 
-target_link_libraries(SwarmProject_loop
-  buzz
-  argos3core_simulator
-  argos3plugin_simulator_dynamics2d
-  argos3plugin_simulator_entities
-  argos3plugin_simulator_footbot
-  argos3plugin_simulator_genericrobot
-  argos3plugin_simulator_media
-  argos3plugin_simulator_buzz
+target_link_libraries(SwarmProject
+      buzz
+      argos3core_simulator
+      argos3plugin_simulator_dynamics2d
+      argos3plugin_simulator_entities
+      argos3plugin_simulator_footbot
+      argos3plugin_simulator_genericrobot
+      argos3plugin_simulator_media
+      argos3plugin_simulator_buzz
   )
 
 # Install stuff
-install(TARGETS SwarmProject_loop DESTINATION ${ARGOS_PREFIX}/lib/argos3)
+# install(TARGETS SwarmProject DESTINATION ${ARGOS_PREFIX}/lib/argos3)
 
