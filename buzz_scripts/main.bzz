@@ -5,13 +5,13 @@ function init() {
     ## Parameters 
     # Get parameters from the config file
     STEP_SIZE = 0.1     # According to the launch file
-    ROBOT_VELOCITY = 50
+    ROBOT_VELOCITY = 100
 
-    WORLD_LENGTH = 20
-    WORLD_HEIGHT = 20
-    WORLD_CENTER = {.x = 0, .y = 0}
+    WORLD_LENGTH = 20.0
+    WORLD_HEIGHT = 20.0
+    WORLD_CENTER = {.x = 0.0, .y = 0.0}
     
-    CELL_SIZE = 0.07    # Half of Khepera diameter
+    CELL_SIZE = 1    # Half of Khepera diameter
     
     LAMBDA = 0.01 * STEP_SIZE / 0.016   # Adjusts to have the same rate per second as in the article
     EVAPORATION_RATE = 5.0     # Between 0 and 1000 in the article, same with different step size ?
@@ -31,12 +31,13 @@ function init() {
     robot_state = {.role = "cooperator", .state = "to_food", .pheromone_type = "home", .last_poi_timestamp = 0}    # poi : point of interest i.e. home or food
 
     step_count = 0
+    last_cell_index = get_cell_index(pose.position)
 }
 
 function step() {
     current_cell_index = get_cell_index(pose.position)
     
-    if (current_cell_index != last_cell_index){     # Updates the cell state once, when the robot moves out
+    if (current_cell_index != last_cell_index){     # Updates the robot state and cell state once, when the robot moves out
         cell_state = pheromone_grid.get(last_cell_index)
 
         if (cell_state != nil){
@@ -92,17 +93,17 @@ function robot_move(heading_instruction){
 function get_cell_index(position){
     # Return the cell index. Return nil if the position is outside the world.
 
-    var shifted_position  = {}  # Consider the origin in the lower left corner for convenience
+    var shifted_position = {}  # Consider the origin in the lower left corner for convenience
 
-    shifted_position .x = position.x - (WORLD_CENTER.x - WORLD_LENGTH / 2)
-    shifted_position .y = position.y - (WORLD_CENTER.y - WORLD_HEIGHT / 2)
+    shifted_position.x = position.x - (WORLD_CENTER.x - WORLD_LENGTH / 2.0)
+    shifted_position.y = position.y - (WORLD_CENTER.y - WORLD_HEIGHT / 2.0)
 
-    if (shifted_position .x <= 0 or shifted_position .x > WORLD_LENGTH or shifted_position .y <= 0 or shifted_position .y > WORLD_HEIGHT){
+    if (shifted_position.x <= 0 or shifted_position.x > WORLD_LENGTH or shifted_position.y <= 0 or shifted_position.y > WORLD_HEIGHT){
         log("WARNING get_cell_index() : Map limits exceeded")
         return nil
     } else {
-        var x_index = math.round_up(shifted_position .x / CELL_SIZE)
-        var y_index = math.round_up(shifted_position .y / CELL_SIZE)
+        var x_index = math.round_up(shifted_position.x / CELL_SIZE)
+        var y_index = math.round_up(shifted_position.y / CELL_SIZE)
         return (x_index + (y_index - 1) * X_CELLS_NUMBER)
     }
 }
