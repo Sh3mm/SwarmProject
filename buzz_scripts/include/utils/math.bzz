@@ -6,3 +6,12 @@ math.round_up = function(num){
         return num - remainder + 1
     }
 }
+
+math.round_down = function(num){
+    var remainder = num % 1
+    if (remainder == 0){
+        return num
+    } else {
+        return num - remainder
+    }
+}
