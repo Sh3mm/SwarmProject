@@ -1,0 +1,107 @@
+<?xml version="1.0" ?>
+<argos-configuration>
+
+  <!-- ************************* -->
+  <!-- * General configuration * -->
+  <!-- ************************* -->
+  <framework>
+    <system threads="0" />
+    <experiment length="0"
+                ticks_per_second="10"
+                random_seed="90" />
+  </framework>
+
+  <!-- *************** -->
+  <!-- * Controllers * -->
+  <!-- *************** -->
+  <controllers>
+    <buzz_controller_kheperaiv id="ant">
+      <actuators>
+        <differential_steering implementation="default" />
+        <leds                  implementation="default" medium="leds" />
+        <range_and_bearing     implementation="default" />
+      </actuators>
+      <sensors>
+        <kheperaiv_proximity implementation="default" show_rays="true" />
+        <range_and_bearing   implementation="medium" medium="rab"
+                             show_rays="false" noise_std_dev="0" />
+        <positioning         implementation="default" />
+      </sensors>
+      <params
+        bytecode_file="buzz_scripts/main.bo"
+        debug_file="buzz_scripts/main.bdb">
+        <wheel_turning hard_turn_angle_threshold="90"
+                       soft_turn_angle_threshold="70"
+                       no_turn_angle_threshold="1"
+                       max_speed="140" />
+      </params>
+    </buzz_controller_kheperaiv>
+  </controllers>
+
+  <loop_functions library="loop_funcs/build/libSwarmProject.so" label="SP_loop_functions">
+    <home x="$$HOME_X$$" y="$$HOME_Y$$" radius="$$HOME_RADIUS$$"/>
+    <goal x="$$GOAL_X$$" y="$$GOAL_Y$$" radius="$$GOAL_RADIUS$$"/>
+  </loop_functions>
+
+  <!-- *********************** -->
+  <!-- * Arena configuration * -->
+  <!-- *********************** -->
+  <arena size="20, 20, 1" center="0,0,0.5">
+
+    <box id="wall_north" size="20,0.1,0.5" movable="false">
+      <body position="0,10,0" orientation="0,0,0" />
+    </box>
+    <box id="wall_south" size="20,0.1,0.5" movable="false">
+      <body position="0,-10,0" orientation="0,0,0" />
+    </box>
+    <box id="wall_east" size="0.1,20,0.5" movable="false">
+      <body position="10,0,0" orientation="0,0,0" />
+    </box>
+    <box id="wall_west" size="0.1,20,0.5" movable="false">
+      <body position="-10,0,0" orientation="0,0,0" />
+    </box>
+
+    <floor id="floor" source="loop_functions" pixels_per_meter="50" />
+
+    <distribute>
+      <position method="uniform" min="$$HOME_MIN_X$$,$$HOME_MIN_Y$$,0" max="$$HOME_MAX_X$$,$$HOME_MAX_Y$$,0" />
+      <orientation method="gaussian" mean="0,0,0" std_dev="360,0,0" />
+      <entity quantity="$$NUMBER$$" max_trials="100">
+        <kheperaiv id="kiv" rab_data_size="200" rab_range="1000">
+          <controller config="ant" />
+        </kheperaiv>
+      </entity>
+    </distribute>
+
+  </arena>
+
+  <!-- ******************* -->
+  <!-- * Physics engines * -->
+  <!-- ******************* -->
+  <physics_engines>
+    <dynamics2d id="dyn2d" />
+  </physics_engines>
+
+  <!-- ********* -->
+  <!-- * Media * -->
+  <!-- ********* -->
+  <media>
+    <range_and_bearing id="rab" />
+    <led id="leds" />
+  </media>
+
+  <!-- ****************** -->
+  <!-- * Visualization * -->
+  <!-- ****************** -->
+  <visualization>
+    <qt-opengl>
+      <user_functions label="buzz_qt" />
+	<camera>
+	  <placements>
+	    <placement index="0" position="0,0,45" look_at="0,0,0" up="0,1,0" lens_focal_length="60"/>
+	  </placements>
+	</camera>
+    </qt-opengl>
+  </visualization>
+
+</argos-configuration>
