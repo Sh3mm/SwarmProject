@@ -84,6 +84,16 @@
       </entity>
     </distribute>
 
+    <!-- <kheperaiv id="kh0" rab_range="10" rab_data_size="500">
+      <body position="-9.5,-9.5,0" orientation="0,0,0" />
+      <controller config="ant" />
+    </kheperaiv>
+
+    <kheperaiv id="kh1" rab_range="10" rab_data_size="500">
+      <body position="-8.5,-9.5,0" orientation="0,0,0" />
+      <controller config="ant" />
+    </kheperaiv> -->
+
     <!-- <light id="light_1"
        position="0,0,0.5"
        orientation="0,0,0"
