@@ -11,7 +11,7 @@ function init() {
     WORLD_HEIGHT = 20.0
     WORLD_CENTER = {.x = 0.0, .y = 0.0}
     
-    CELL_SIZE = 1    # Half of Khepera diameter
+    CELL_SIZE = 0.07    # Half of Khepera diameter
     
     LAMBDA = 0.01 * STEP_SIZE / 0.016   # Adjusts to have the same rate per second as in the article
     EVAPORATION_RATE = 5.0     # Between 0 and 1000 in the article, same with different step size ?
@@ -119,7 +119,6 @@ function update_robot_state(current_cell_state){
 
 function update_cell_state(current_cell_state){
     # Updates vstig with the new type and intensity of pheromone in the cell.
-    # TODO: implement behavior with detractors pheromones
 
     var new_cell_state = {}
     var steps_since_poi = step_count - robot_state.last_poi_timestamp
@@ -144,8 +143,9 @@ function update_cell_state(current_cell_state){
             new_cell_state.intensity = pheromone_intensity(steps_since_poi)
         }
 
-    } else {
+    } else if (robot_state.role == "detractor"){
         # TODO: Implement detractor deposit behavior
+
         new_cell_state.type = "food"
         new_cell_state.intensity = pheromone_intensity(steps_since_poi)
     }
