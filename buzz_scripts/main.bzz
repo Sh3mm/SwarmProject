@@ -1,13 +1,205 @@
 include "utils/vec2.bzz"
+include "utils/math.bzz"
 
 function init() {
+    ## Parameters 
+    # TODO : Get the parameters from the config file
+    STEP_SIZE = 0.1     # According to the launch file
+    ROBOT_VELOCITY = 100
+
+    WORLD_LENGTH = 20.0
+    WORLD_HEIGHT = 20.0
+    WORLD_CENTER = {.x = 0.0, .y = 0.0}
+    
+    CELL_SIZE = 0.07    # Half of Khepera diameter
+    
+    LAMBDA = 0.01 * STEP_SIZE / 0.016   # Adjusts to have the same rate per second as in the article
+    EVAPORATION_RATE = 5.0     # Between 0 and 1000 in the article, same with different step size ?
+
+    DETRACTOR_FRACTION = 0
+
+    POI_AREA = {    # poi : point of interest i.e. home base or food source
+        .1 = {.pheromone_type = "home_base", .center = math.vec2.new(0.0, 0.0), .radius = 1.0},
+        .2 = {.pheromone_type = "food_source", .center = math.vec2.new(-7.0, -7.0), .radius = 1.0}
+    }
+
+    ## Initialization
+    X_CELLS_NUMBER = math.round_up(WORLD_LENGTH / CELL_SIZE)
+    Y_CELLS_NUMBER = math.round_up(WORLD_HEIGHT / CELL_SIZE)
+    CELLS_NUMBER = X_CELLS_NUMBER * Y_CELLS_NUMBER
+    
+    pheromone_grid = stigmergy.create(1)
+    init_poi_cells(POI_AREA)    # TODO: Works but is too resource consuming, check if we are in a poi area directly in the step() according to the center and the radius of poi areas.
+    
+    # TODO: Adjusts the number of detractors according to DETRACTOR_FRACTION
+    robot_state = {.role = "cooperator", .state = "to_food", .pheromone_type = "home", .last_poi_timestamp = 0}
+
+    step_count = 0
+    last_cell_index = get_cell_index(pose.position)
 }
 
-function step() {	
+function step() {
+    current_cell_index = get_cell_index(pose.position)
+    if (current_cell_index != last_cell_index){     # Updates the robot state and cell state once, when the robot moves out
+        cell_state = pheromone_grid.get(last_cell_index)
+
+        if (cell_state == nil){
+            update_cell_state(cell_state)
+
+        } else {
+            if (cell_state.type == "home_base" or cell_state.type == "food_source"){
+                update_robot_state(cell_state)
+
+            } else {
+                update_cell_state(cell_state)
+            }
+        }
+    } 
+
+    robot_move(math.pi/2) # TODO: Implement movement according to the pheromone grid and rebound on the world edges.
+
+    last_cell_index = current_cell_index
+    step_count = step_count + 1
 }
 
 function reset() {
 }
 
 function destroy() {
+}
+
+function robot_move(heading_instruction){
+    # Move robot at ROBOT_VELOCITY speed with heading_instruction heading.
+    # Equation (3) adaptation.
+
+    var velocity = math.vec2.newp(ROBOT_VELOCITY, heading_instruction)  # Global velocity vector
+    var velocity_robot = math.vec2.rotate(velocity, -pose.orientation.yaw)  # Robot velocity vector
+    goto(velocity_robot.x, velocity_robot.y)
+}
+
+function get_cell_index(position){
+    # Return the cell index. Return nil if the position is outside the world.
+
+    var shifted_position = {}  # Consider the origin in the lower left corner for convenience
+
+    shifted_position.x = position.x - (WORLD_CENTER.x - WORLD_LENGTH / 2.0)
+    shifted_position.y = position.y - (WORLD_CENTER.y - WORLD_HEIGHT / 2.0)
+
+    if (shifted_position.x < 0 or shifted_position.x >= WORLD_LENGTH or shifted_position.y < 0 or shifted_position.y >= WORLD_HEIGHT){
+        log("WARNING get_cell_index() : Map limits exceeded")
+        return nil
+    } else {
+        var x_index = math.round_down(shifted_position.x / CELL_SIZE)
+        var y_index = math.round_down(shifted_position.y / CELL_SIZE)
+        return (x_index + (y_index) * X_CELLS_NUMBER)
+    }
+}
+
+function get_cell_position(cell_index){
+    # Return the cell center position.
+
+    var x_index = cell_index % X_CELLS_NUMBER
+    var y_index = math.round_down(cell_index / Y_CELLS_NUMBER)
+
+    var shifted_position = {}
+    shifted_position.x = (x_index + 0.5) * CELL_SIZE
+    shifted_position.y = (y_index + 0.5) * CELL_SIZE
+
+    var position = {}
+    position.x = shifted_position.x + (WORLD_CENTER.x - WORLD_LENGTH / 2.0)
+    position.y = shifted_position.y + (WORLD_CENTER.y - WORLD_HEIGHT / 2.0)
+
+    return position
+}
+
+function init_poi_cells(poi_area){
+    # Mark point of intestest cells with specific pheromone. A cell is marked if its center is in the disk of interest.
+
+    var cell_index = 0
+    var cell_position
+    while (cell_index < CELLS_NUMBER){
+        cell_position = get_cell_position(cell_index)
+        foreach(poi_area, function(key, area){
+            if (math.vec2.dis(cell_position, area.center) <= area.radius){
+                pheromone_grid.put(cell_index, {.timestamp = 0, .type = area.pheromone_type, .intensity = 1000})
+            }
+        })
+
+        cell_index = cell_index + 1
+    }
+}
+
+function update_robot_state(current_cell_state){
+    # Update robot state according to the point of interest type
+
+    if (current_cell_state.type == "home_base"){
+        if (robot_state.role == "cooperator"){
+            robot_state.last_poi_timestamp = step_count
+            robot_state.state = "to_food"
+            robot_state.pheromone_type = "home"
+
+        } else{
+            # TODO: Add what a detractor does when it passes through the home base
+        }
+
+    } else if (current_cell_state.type == "food_source"){
+        if (robot_state.role == "cooperator"){
+            robot_state.last_poi_timestamp = step_count
+            robot_state.state = "to_home"
+            robot_state.pheromone_type = "food"
+
+        } else {
+            # TODO: Add what a detractor does when it passes through a food source
+        }
+    }
+}
+
+function update_cell_state(current_cell_state){
+    # Updates vstig with the new type and intensity of pheromone in the cell.
+
+    var new_cell_state = {}
+    var steps_since_poi = step_count - robot_state.last_poi_timestamp
+
+    if (robot_state.role == "cooperator"){
+        if (current_cell_state != nil){
+            var steps_since_last_deposit = step_count - current_cell_state.timestamp
+            var cell_type = current_cell_state.type
+            var cell_intensity = pheromone_evaporation(current_cell_state.intensity, steps_since_last_deposit)
+    
+            if (cell_type == robot_state.pheromone_type){   # Same pheromone, keep the maximum
+                new_cell_state.type = cell_type
+                new_cell_state.intensity = math.max(cell_intensity, pheromone_intensity(steps_since_poi))
+
+            } else {    # Different pheromone, keep the new one
+                new_cell_state.type = robot_state.pheromone_type
+                new_cell_state.intensity = pheromone_intensity(steps_since_poi)
+            }
+    
+        } else {    # If the cell is empty
+            new_cell_state.type = robot_state.pheromone_type
+            new_cell_state.intensity = pheromone_intensity(steps_since_poi)
+        }
+
+    } else if (robot_state.role == "detractor"){
+        # TODO: Implement detractor deposit behavior
+
+        new_cell_state.type = "food"
+        new_cell_state.intensity = pheromone_intensity(steps_since_poi)
+    }
+    
+    pheromone_grid.put(last_cell_index, {.timestamp = step_count, .type = new_cell_state.type, .intensity = new_cell_state.intensity}) # Share timestamp so that the next one can calculate the evaporation that occurs
+}
+
+function pheromone_intensity(steps_number){
+    # Return the robot pheromone intensity
+    # Equation (1) implementation
+
+    return (1000 * math.exp(- LAMBDA * steps_number))
+}
+
+function pheromone_evaporation(intensity, steps_number){
+    # Return the pheromone intensity with the evaporation that has occurred since the last deposit
+    # Equation (2) implementation
+
+    return (intensity - EVAPORATION_RATE * steps_number)
 }

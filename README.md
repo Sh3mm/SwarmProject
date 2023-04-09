@@ -45,11 +45,10 @@ cmake ..
 make
 ```
 
-## Compile Buzz scripts
+## Source the required environment variables
 
 ```
 export BUZZ_INCLUDE_PATH=~/SwarmProject/buzz_scripts/include/
-bzzc main.bzz
 ```
 Or add it to the bashrc
 ```
@@ -59,6 +58,6 @@ echo "export BUZZ_INCLUDE_PATH=~/SwarmProject/buzz_scripts/include/" >> ~/.bashr
 ## Launch the simultation
 
 ```
-cd SwarmProject/launch
-argos3 -c project.argos
+cd SwarmProject
+. run.sh
 ```

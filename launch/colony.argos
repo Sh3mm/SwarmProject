@@ -15,7 +15,7 @@
   <!-- * Controllers * -->
   <!-- *************** -->
   <controllers>
-    <buzz_controller_kheperaiv id="barrier">
+    <buzz_controller_kheperaiv id="ant">
       <actuators>
         <differential_steering implementation="default" />
         <leds                  implementation="default" medium="leds" />
@@ -26,15 +26,18 @@
         <range_and_bearing   implementation="medium" medium="rab"
                              show_rays="false" noise_std_dev="0" />
         <positioning         implementation="default" />
-        <!-- <kheperaiv_light      implementation="rot_z_only" show_rays="true" /> -->
       </sensors>
       <params
         bytecode_file="buzz_scripts/main.bo"
         debug_file="buzz_scripts/main.bdb">
+        <wheel_turning hard_turn_angle_threshold="90"
+                       soft_turn_angle_threshold="70"
+                       no_turn_angle_threshold="1"
+                       max_speed="140" />
       </params>
     </buzz_controller_kheperaiv>
   </controllers>
-  
+
   <loop_functions library="loop_funcs/build/libSwarmProject.so" label="SP_loop_functions">
     <home x="0" y="0" radius="1"/>
     <goal x="2" y="2" radius="2"/>
@@ -63,12 +66,13 @@
     <distribute>
       <position method="uniform" min="0,0,0" max="5,5,0" />
       <orientation method="gaussian" mean="0,0,0" std_dev="360,0,0" />
-      <entity quantity="16" max_trials="100">
+      <entity quantity="2" max_trials="100">
         <kheperaiv id="kiv" rab_data_size="200" rab_range="1000">
-          <controller config="barrier" />
+          <controller config="ant" />
         </kheperaiv>
       </entity>
     </distribute>
+
   </arena>
 
   <!-- ******************* -->
@@ -94,7 +98,7 @@
       <user_functions label="buzz_qt" />
 	<camera>
 	  <placements>
-	    <placement index="0" position="0,0,45" look_at="0,0,0" up="1,0,0" lens_focal_length="60"/>
+	    <placement index="0" position="0,0,45" look_at="0,0,0" up="0,1,0" lens_focal_length="60"/>
 	  </placements>
 	</camera>
     </qt-opengl>
