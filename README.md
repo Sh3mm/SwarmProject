@@ -45,6 +45,16 @@ cmake ..
 make
 ```
 
+## Source the required environment variables
+
+```
+export BUZZ_INCLUDE_PATH=~/SwarmProject/buzz_scripts/include/
+```
+Or add it to the bashrc
+```
+echo "export BUZZ_INCLUDE_PATH=~/SwarmProject/buzz_scripts/include/" >> ~/.bashrc
+```
+
 ## Launch the simultation
 
 ```
