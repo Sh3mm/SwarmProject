@@ -235,6 +235,7 @@ function robot_motion(){
                     }
                 }
             } else {
+                # TODO: Change wall reflection trigger (wrong place in the program for now) and behavior and add reflection on home and food area
                 robot_global_direction = math.wraptopi(robot_global_direction + math.pi)
             }
             probe_index = probe_index + 1
@@ -242,5 +243,5 @@ function robot_motion(){
         robot_global_direction = robot_global_direction + math.rng.uniform(-RANDOM_NOISE_FACTOR, RANDOM_NOISE_FACTOR)
     }
 
-    move(robot_global_direction) # TODO: Implement movement according to the pheromone grid and rebound on the world edges and on poi area.
+    move(robot_global_direction)
 }
