@@ -20,7 +20,7 @@ function init() {
 
     POI_AREA = {    # poi : point of interest i.e. home base or food source
         .1 = {.pheromone_type = "home_base", .center = math.vec2.new(0.0, 0.0), .radius = 1.0},
-        .2 = {.pheromone_type = "food_source", .center = math.vec2.new(-7.0, -7.0), .radius = 1.0}
+        .2 = {.pheromone_type = "food_source", .center = math.vec2.new(-7.0, -7.0), .radius = 2.0}
     }
 
     ## Initialization
@@ -29,7 +29,6 @@ function init() {
     CELLS_NUMBER = X_CELLS_NUMBER * Y_CELLS_NUMBER
     
     pheromone_grid = stigmergy.create(1)
-    init_poi_cells(POI_AREA)    # TODO: Works but is too resource consuming, check if we are in a poi area directly in the step() according to the center and the radius of poi areas.
     
     # TODO: Adjusts the number of detractors according to DETRACTOR_FRACTION
     robot_state = {.role = "cooperator", .state = "to_food", .pheromone_type = "home", .last_poi_timestamp = 0}
@@ -41,23 +40,18 @@ function init() {
 function step() {
     current_cell_index = get_cell_index(pose.position)
     if (current_cell_index != last_cell_index){     # Updates the robot state and cell state once, when the robot moves out
-        cell_state = pheromone_grid.get(last_cell_index)
-
-        if (cell_state == nil){
-            update_cell_state(cell_state)
-
+        in_poi_result = is_in_poi(last_cell_index, POI_AREA)    # Check if the cell is in a POI
+        if (in_poi_result != nil){
+            update_robot_state(in_poi_result)
         } else {
-            if (cell_state.type == "home_base" or cell_state.type == "food_source"){
-                update_robot_state(cell_state)
-
-            } else {
-                update_cell_state(cell_state)
-            }
+            last_cell_state = pheromone_grid.get(last_cell_index)
+            update_cell_state(last_cell_state)
         }
     } 
 
-    robot_move(math.pi/2) # TODO: Implement movement according to the pheromone grid and rebound on the world edges.
+    robot_move(-3*math.pi/4) # TODO: Implement movement according to the pheromone grid and rebound on the world edges.
 
+    debug.print(robot_state.state, "  ", robot_state.pheromone_type, "   ", robot_state.last_poi_timestamp)
     last_cell_index = current_cell_index
     step_count = step_count + 1
 }
@@ -112,27 +106,23 @@ function get_cell_position(cell_index){
     return position
 }
 
-function init_poi_cells(poi_area){
-    # Mark point of intestest cells with specific pheromone. A cell is marked if its center is in the disk of interest.
+function is_in_poi(cell_index, poi_area){
+    # Return POI type if the cell is in a POI area
 
-    var cell_index = 0
-    var cell_position
-    while (cell_index < CELLS_NUMBER){
-        cell_position = get_cell_position(cell_index)
-        foreach(poi_area, function(key, area){
-            if (math.vec2.dis(cell_position, area.center) <= area.radius){
-                pheromone_grid.put(cell_index, {.timestamp = 0, .type = area.pheromone_type, .intensity = 1000})
-            }
-        })
-
-        cell_index = cell_index + 1
-    }
+    var cell_position = get_cell_position(cell_index)
+    var poi_type = {}
+    foreach(poi_area, function(key, area){
+        if (math.vec2.dis(cell_position, area.center) <= area.radius){
+            poi_type.result = area.pheromone_type
+        }
+    })
+    return poi_type.result
 }
 
-function update_robot_state(current_cell_state){
+function update_robot_state(poi_type){
     # Update robot state according to the point of interest type
 
-    if (current_cell_state.type == "home_base"){
+    if (poi_type == "home_base"){
         if (robot_state.role == "cooperator"){
             robot_state.last_poi_timestamp = step_count
             robot_state.state = "to_food"
@@ -142,7 +132,7 @@ function update_robot_state(current_cell_state){
             # TODO: Add what a detractor does when it passes through the home base
         }
 
-    } else if (current_cell_state.type == "food_source"){
+    } else if (poi_type == "food_source"){
         if (robot_state.role == "cooperator"){
             robot_state.last_poi_timestamp = step_count
             robot_state.state = "to_home"
