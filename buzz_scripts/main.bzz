@@ -5,13 +5,13 @@ function init() {
     ## Parameters 
     # TODO : Get the parameters from the config file
     STEP_SIZE = 0.1     # According to the launch file
-    ROBOT_VELOCITY = 100
+    ROBOT_VELOCITY = 140
 
     WORLD_LENGTH = 20.0
     WORLD_HEIGHT = 20.0
     WORLD_CENTER = {.x = 0.0, .y = 0.0}
     
-    CELL_SIZE = 0.07    # Half of Khepera diameter
+    CELL_SIZE = 0.14    # Half of Khepera diameter
     
     POI_AREA = {    # poi : point of interest i.e. home base or food source
         .1 = {.pheromone_type = "home_base", .center = math.vec2.new(0.0, 0.0), .radius = 1.0},
@@ -24,10 +24,10 @@ function init() {
     EVAPORATION_RATE = 5.0     # Between 0 and 1000 in the article, same with different step size ?
     
     PROBE_DIRECTION_RANGE = 0.8 * math.pi
-    MAX_PROBE_MAGNITUDE = 0.2
+    MAX_PROBE_MAGNITUDE = 0.5
     RANDOM_NOISE_FACTOR = 0.1 * math.pi
     STEPS_BETWEEN_TURNS = 7
-    RANDOM_VECTORS_NUMBER = 32
+    RANDOM_VECTORS_NUMBER = 200
 
     ## Initialization
     X_CELLS_NUMBER = math.round_up(WORLD_LENGTH / CELL_SIZE)
@@ -50,6 +50,7 @@ function init() {
 function step() {
     current_cell_index = get_cell_index(pose.position)
     if (current_cell_index != last_cell_index){     # Updates the robot state and cell state once, when the robot moves out
+    
         in_poi_result = is_in_poi(last_cell_index, POI_AREA)    # Check if the cell is in a POI
         if (in_poi_result != nil){
             update_robot_state(in_poi_result)
@@ -61,7 +62,7 @@ function step() {
 
     robot_motion()
 
-    debug.print(robot_state.tracked_pheromone, "  ", robot_state.dropped_pheromone, "   ", robot_state.last_poi_timestamp)
+    debug.print(robot_state.tracked_pheromone)
     last_cell_index = current_cell_index
     step_count = step_count + 1
 }
@@ -226,13 +227,15 @@ function robot_motion(){
                     var steps_since_last_deposit = step_count - probed_cell_state.timestamp
                     var probed_cell_intensity = pheromone_evaporation(probed_cell_state.intensity, steps_since_last_deposit)    # Compute intensity after evaporation
                     if (probed_cell_state.type == robot_state.tracked_pheromone){   # Cell contains the desired pheromone 
-                        log("desired pheromone find !")
+                        log("Robot: ", id, " Desired pheromone find !")
                         if (probed_cell_intensity > max_probed_intensity){
                             max_probed_intensity = probed_cell_intensity
                             robot_global_direction = probe_vector_direction + pose.orientation.yaw
                         }
                     }
                 }
+            } else {
+                robot_global_direction = math.wraptopi(robot_global_direction + math.pi)
             }
             probe_index = probe_index + 1
         }

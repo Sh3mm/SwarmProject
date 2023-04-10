@@ -15,3 +15,16 @@ math.round_down = function(num){
         return num - remainder
     }
 }
+
+math.sign = function(number){
+    return (number / math.abs(number))
+}
+
+math.wraptopi = function(angle){
+    var xwrap = angle % (2 * math.pi)
+  
+    if (math.abs(xwrap) > math.pi){
+    xwrap = xwrap - 2 * math.pi * math.sign(xwrap)
+    }
+    return xwrap
+}
