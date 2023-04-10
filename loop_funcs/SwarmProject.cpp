@@ -47,9 +47,13 @@ CColor SPLoopFunctions::GetFloorColor(const CVector2& c_position_on_plane) {
             (y < m_homeY + m_homeRadius && y > m_homeY - m_homeRadius)
     ) { return CColor::BLUE; }
 
+    const Real dy = y - m_goalY;
+    const Real dx = x - m_goalX;
+
+    const Real dist = std::sqrt(std::pow(dx, 2) + std::pow(dy, 2));
+
     if( // Goal Area
-            (x < m_goalX + m_goalRadius && x > m_goalX - m_goalRadius) &&
-            (y < m_goalY + m_goalRadius && y > m_goalY - m_goalRadius)
+            dist < m_goalRadius
     ) { return CColor::GREEN; }
 
     //default
