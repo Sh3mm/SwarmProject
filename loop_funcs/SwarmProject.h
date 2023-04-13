@@ -5,7 +5,12 @@
 #include <argos3/core/simulator/entity/floor_entity.h>
 #include <argos3/core/utility/math/range.h>
 #include <argos3/core/utility/math/rng.h>
+#include <argos3/plugins/robots/kheperaiv/simulator/kheperaiv_entity.h>
+#include <argos3/plugins/robots/kheperaiv/control_interface/buzz_controller_kheperaiv.h>
 #include <cmath>
+#include <buzz/buzzvm.h>
+#include <buzz/buzztype.h>
+
 
 using namespace argos;
 

@@ -1,6 +1,5 @@
 #include "SwarmProject.h"
-#include <argos3/core/simulator/simulator.h>
-#include <argos3/core/utility/configuration/argos_configuration.h>
+#include "buzz_utils.h"
 
 /****************************************/
 /****************************************/
@@ -17,6 +16,19 @@ void SPLoopFunctions::Init(TConfigurationNode& t_node) {
     GetNodeAttributeOrDefault(home_node, "x", m_homeX, 0.);
     GetNodeAttributeOrDefault(home_node, "y", m_homeY, 0.);
     GetNodeAttributeOrDefault(home_node, "radius", m_homeRadius, 1.);
+
+    for (const auto &item: GetSimulator().GetSpace().GetEntitiesByType("kheperaiv")){
+        auto khepera = any_cast<CKheperaIVEntity*>(item.second);
+        buzzvm_t buzzController = dynamic_cast<CBuzzControllerKheperaIV&>(
+                    khepera->GetControllableEntity().GetController()
+                ).GetBuzzVM();
+
+        buzzobj_t goal_data = buzzheap_newobj(buzzController, BUZZTYPE_TABLE);
+        TablePut(buzzController, goal_data, "x", m_goalX);
+        TablePut(buzzController, goal_data, "y", m_goalY);
+        TablePut(buzzController, goal_data, "radius", m_goalRadius);
+        Register(buzzController, "goal", goal_data);
+    }
 }
 
 /****************************************/

@@ -1,0 +1,7 @@
+homeX 0
+homeY 0
+homeR 1
+goalX 0
+goalY 0
+goalR 2
+kheperaNb 10
