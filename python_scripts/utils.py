@@ -4,14 +4,20 @@ import xmltodict
 from python_scripts import TEMPLATE_VARS
 
 
-def from_template(template: str, change: dict, *, to='launch/autogenColony.argos'):
+def from_template(template: str, change: dict, *, to='launch/autogenColony.argos', headless=False):
     # Read the template
     template = Path(template).resolve(strict=True)
     with template.open('r') as f:
         raw_xml = f.read()
+    var_dict = TEMPLATE_VARS.copy()
+
+    # remove the visualisation if headless
+    if headless:
+        var_dict.pop("$$VIS$$")
+        raw_xml.replace("$$VIS$$", '')
 
     # replace stand-ins
-    for stand_in, r_func in TEMPLATE_VARS.items():
+    for stand_in, r_func in var_dict.items():
         raw_xml = raw_xml.replace(stand_in, str(r_func(change)))
 
     # Write the ARGoS file
