@@ -1,5 +1,7 @@
 from pathlib import Path
-from python_scripts.template_vars import TEMPLATE_VARS
+from typing import Union
+import xmltodict
+from python_scripts import TEMPLATE_VARS
 
 
 def from_template(template: str, change: dict, *, to='launch/autogenColony.argos'):
@@ -10,7 +12,7 @@ def from_template(template: str, change: dict, *, to='launch/autogenColony.argos
 
     # replace stand-ins
     for stand_in, r_func in TEMPLATE_VARS.items():
-        raw_xml = raw_xml.replace(stand_in, r_func(change))
+        raw_xml = raw_xml.replace(stand_in, str(r_func(change)))
 
     # Write the ARGoS file
     to = Path(to).resolve()
@@ -18,12 +20,12 @@ def from_template(template: str, change: dict, *, to='launch/autogenColony.argos
         f.write(raw_xml)
 
 
-def get_config(config: str) -> dict:
+def get_config(config: Union[Path, str]) -> dict:
     # Read the config files
     config = Path(config).resolve(strict=True)
     with config.open('r') as f:
-        pairs = f.readlines()
+        raw_config = f.read()
 
-    # Return a dict of the pairs identified in the config file
-    pairs = [pair.split(' ') for pair in pairs]
-    return {key: val for key, val in pairs}
+    config_dict = xmltodict.parse(raw_config)['data']
+    config_dict['DATA'] = raw_config
+    return config_dict

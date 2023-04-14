@@ -1,0 +1,12 @@
+<data WORLD_LENGTH="20.0"
+      WORLD_HEIGHT="20.0"
+      CELL_SIZE="0.14"
+      DETRACTOR_FRACTION="0"
+      EVAPORATION_RATE="5.0"
+      KHEPERA_NB="20">
+    <WORLD_CENTER X="0.0" Y="0.0"/>
+    <POI_AREA>
+        <HOME X="0.0" Y="0.0" RADIUS="1.0"/>
+        <GOAL X="-7.0" Y="-7.0" RADIUS="2.0"/>
+    </POI_AREA>
+</data>

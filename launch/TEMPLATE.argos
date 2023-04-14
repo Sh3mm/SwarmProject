@@ -39,8 +39,7 @@
   </controllers>
 
   <loop_functions library="loop_funcs/build/libSwarmProject.so" label="SP_loop_functions">
-    <home x="$$HOME_X$$" y="$$HOME_Y$$" radius="$$HOME_RADIUS$$"/>
-    <goal x="$$GOAL_X$$" y="$$GOAL_Y$$" radius="$$GOAL_RADIUS$$"/>
+    $$DATA$$
   </loop_functions>
 
   <!-- *********************** -->

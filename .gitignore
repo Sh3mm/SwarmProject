@@ -7,6 +7,8 @@
 # Build files
 
 **/build/
+launch/autogenColony.argos
+**/__pycache__/
 
 # IDEs files
 

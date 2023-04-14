@@ -37,6 +37,8 @@ private:
     Real m_homeX;
     Real m_homeY;
     Real m_homeRadius;
+
+    static buzzobj_t create_buzz_obj(TConfigurationNode &t_node, buzzvm_t buzz_vm);
 };
 
 #endif

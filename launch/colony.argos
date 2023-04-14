@@ -39,8 +39,17 @@
   </controllers>
 
   <loop_functions library="loop_funcs/build/libSwarmProject.so" label="SP_loop_functions">
-    <home x="0" y="0" radius="1"/>
-    <goal x="-7" y="-7" radius="2"/>
+    <data WORLD_LENGTH = "20.0"
+          WORLD_HEIGHT = "20.0"
+          CELL_SIZE = "0.14"
+          DETRACTOR_FRACTION = "0"
+          EVAPORATION_RATE = "5.0">
+      <WORLD_CENTER x = "0.0" y = "0.0"/>
+      <POI_AREA>
+        <home x="0.0" y="0.0" radius="1.0"/>
+        <goal x="-7.0" y="-7.0" radius="2.0"/>
+      </POI_AREA>
+    </data>
   </loop_functions>
 
   <!-- *********************** -->

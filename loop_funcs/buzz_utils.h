@@ -131,4 +131,13 @@ buzzvm_state TablePut(buzzvm_t m_tBuzzVM,
 /****************************************/
 /****************************************/
 
-
+buzzvm_state TablePut(buzzvm_t m_tBuzzVM,
+                      buzzobj_t t_table,
+                      const std::string& str_key,
+                      const std::string& s_value) {
+   buzzvm_push(m_tBuzzVM, t_table);
+   buzzvm_pushs(m_tBuzzVM, buzzvm_string_register(m_tBuzzVM, str_key.c_str(), 1));
+   buzzvm_pushs(m_tBuzzVM, buzzvm_string_register(m_tBuzzVM, s_value.c_str(), 1));
+   buzzvm_tput(m_tBuzzVM);
+   return m_tBuzzVM->state;
+}

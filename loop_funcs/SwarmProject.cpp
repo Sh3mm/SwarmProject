@@ -6,16 +6,18 @@
 
 void SPLoopFunctions::Init(TConfigurationNode& t_node) {
     m_pcFloor = &GetSpace().GetFloorEntity();
+    auto data_node = GetNode(t_node, "data");
+    auto poi_node = GetNode(data_node, "POI_AREA");
 
-    auto goal_node = GetNode(t_node, "goal");
-    GetNodeAttributeOrDefault(goal_node, "x", m_goalX, 0.);
-    GetNodeAttributeOrDefault(goal_node, "y", m_goalY, 0.);
-    GetNodeAttributeOrDefault(goal_node, "radius", m_goalRadius, 0.);
+    auto goal_node = GetNode(poi_node, "GOAL");
+    GetNodeAttributeOrDefault(goal_node, "X", m_goalX, 0.);
+    GetNodeAttributeOrDefault(goal_node, "Y", m_goalY, 0.);
+    GetNodeAttributeOrDefault(goal_node, "RADIUS", m_goalRadius, 0.);
 
-    auto home_node = GetNode(t_node, "home");
-    GetNodeAttributeOrDefault(home_node, "x", m_homeX, 0.);
-    GetNodeAttributeOrDefault(home_node, "y", m_homeY, 0.);
-    GetNodeAttributeOrDefault(home_node, "radius", m_homeRadius, 1.);
+    auto home_node = GetNode(poi_node, "HOME");
+    GetNodeAttributeOrDefault(home_node, "X", m_homeX, 0.);
+    GetNodeAttributeOrDefault(home_node, "Y", m_homeY, 0.);
+    GetNodeAttributeOrDefault(home_node, "RADIUS", m_homeRadius, 1.);
 
     for (const auto &item: GetSimulator().GetSpace().GetEntitiesByType("kheperaiv")){
         auto khepera = any_cast<CKheperaIVEntity*>(item.second);
@@ -23,12 +25,48 @@ void SPLoopFunctions::Init(TConfigurationNode& t_node) {
                     khepera->GetControllableEntity().GetController()
                 ).GetBuzzVM();
 
-        buzzobj_t goal_data = buzzheap_newobj(buzzController, BUZZTYPE_TABLE);
-        TablePut(buzzController, goal_data, "x", m_goalX);
-        TablePut(buzzController, goal_data, "y", m_goalY);
-        TablePut(buzzController, goal_data, "radius", m_goalRadius);
-        Register(buzzController, "goal", goal_data);
+        buzzobj_t data = create_buzz_obj(data_node, buzzController);
+        Register(buzzController, "WORLD_DATA", data);
     }
+}
+
+buzzobj_t SPLoopFunctions::create_buzz_obj(TConfigurationNode &node, buzzvm_t buzz_vm) {
+    buzzobj_t data = buzzheap_newobj(buzz_vm, BUZZTYPE_TABLE);
+
+    // attribute loop
+    auto attribute = node.FirstAttribute(false);
+    while(attribute != nullptr){
+        std::string name;
+        Real realValue;
+        std::string stringValue;
+
+        // getting attribute name and value
+        attribute->GetName(&name);
+        try {
+            // putting the attribute in the table
+            attribute->GetValue(&realValue);
+            TablePut(buzz_vm, data, name, realValue);
+        } catch (ticpp::Exception &e) {
+            attribute->GetValue(&stringValue);
+            TablePut(buzz_vm, data, name, stringValue);
+        }
+        // iterate as long as there are more attributes
+        attribute = attribute->Next(false);
+    }
+
+    TConfigurationNode* child = node.FirstChildElement(false);
+    while(child != nullptr){
+        std::string name;
+        child->GetValue(&name);
+
+        auto obj = create_buzz_obj(*child, buzz_vm);
+        TablePut(buzz_vm, data, name, obj);
+
+        // iterate as long as there are more children
+        child = child->NextSiblingElement(false);
+    }
+
+    return data;
 }
 
 /****************************************/
