@@ -1,57 +1,18 @@
 include "utils/vec2.bzz"
 include "utils/math.bzz"
 
-function init() {
-    ## Parameters 
-    # TODO : Get the parameters from the config file
-    STEP_SIZE = 0.1     # According to the launch file
-    ROBOT_VELOCITY = 140
-
-    WORLD_LENGTH = 20.0
-    WORLD_HEIGHT = 20.0
-    WORLD_CENTER = {.x = 0.0, .y = 0.0}
-    
-    CELL_SIZE = 0.14    # Half of Khepera diameter
-    
-    POI_AREA = {    # poi : point of interest i.e. home base or food source
-        .1 = {.pheromone_type = "home_base", .center = math.vec2.new(0.0, 0.0), .radius = 1.0},
-        .2 = {.pheromone_type = "food_source", .center = math.vec2.new(-7.0, -7.0), .radius = 2.0}
-    }
-    
-    DETRACTOR_FRACTION = 0
-    
-    LAMBDA = 0.01 * STEP_SIZE / 0.016   # Adjusts to have the same rate per second as in the article
-    EVAPORATION_RATE = 5.0     # Between 0 and 1000 in the article, same with different step size ?
-    
-    PROBE_DIRECTION_RANGE = 0.8 * math.pi
-    MAX_PROBE_MAGNITUDE = 0.5
-    RANDOM_NOISE_FACTOR = 0.1 * math.pi
-    STEPS_BETWEEN_TURNS = 7
-    RANDOM_VECTORS_NUMBER = 200
-
-    ## Initialization
-    X_CELLS_NUMBER = math.round_up(WORLD_LENGTH / CELL_SIZE)
-    Y_CELLS_NUMBER = math.round_up(WORLD_HEIGHT / CELL_SIZE)
-    CELLS_NUMBER = X_CELLS_NUMBER * Y_CELLS_NUMBER
-    
-    pheromone_grid = stigmergy.create(1)
-    
-    # TODO: Adjust the number of detractors according to DETRACTOR_FRACTION
-    robot_state = {.role = "cooperator", .tracked_pheromone = "food", .dropped_pheromone = "home", .last_poi_timestamp = 0}
-
-    step_count = 0
-    last_cell_index = get_cell_index(pose.position)
-
-    math.rng.setseed(id)
-    step_offset = math.rng.uniform(7)
-    robot_global_direction = math.rng.uniform(-math.pi, math.pi)
+function init(){
+    simulation_initialized = 0
 }
 
-function step() {
+function step(){
+    if (simulation_initialized != 1) {init_simulation()}
+
     current_cell_index = get_cell_index(pose.position)
     if (current_cell_index != last_cell_index){     # Updates the robot state and cell state once, when the robot moves out
     
         in_poi_result = is_in_poi(last_cell_index, POI_AREA)    # Check if the cell is in a POI
+
         if (in_poi_result != nil){
             update_robot_state(in_poi_result)
         } else {
@@ -67,10 +28,46 @@ function step() {
     step_count = step_count + 1
 }
 
-function reset() {
+function reset(){
 }
 
-function destroy() {
+function destroy(){
+}
+
+function init_simulation(){
+    ## Parameters
+    STEP_SIZE = 0.1     # According to the launch file
+    ROBOT_VELOCITY = 140
+    
+    POI_AREA = {    # poi : point of interest i.e. home base or food source
+        .1 = {.pheromone_type = "home_base", .center = math.vec2.new(WORLD_DATA.POI_AREA.HOME.X, WORLD_DATA.POI_AREA.HOME.Y), .radius = WORLD_DATA.POI_AREA.HOME.RADIUS},
+        .2 = {.pheromone_type = "food_source", .center = math.vec2.new(WORLD_DATA.POI_AREA.GOAL.X, WORLD_DATA.POI_AREA.GOAL.Y), .radius = WORLD_DATA.POI_AREA.GOAL.RADIUS}
+    }
+    
+    PROBE_DIRECTION_RANGE = 0.8 * math.pi
+    MAX_PROBE_MAGNITUDE = 0.5
+    RANDOM_NOISE_FACTOR = 0.1 * math.pi
+    STEPS_BETWEEN_TURNS = 7
+    RANDOM_VECTORS_NUMBER = 200
+
+    ## Initialization
+    X_CELLS_NUMBER = math.round_up(WORLD_DATA.WORLD_LENGTH / WORLD_DATA.CELL_SIZE)
+    Y_CELLS_NUMBER = math.round_up(WORLD_DATA.WORLD_HEIGHT / WORLD_DATA.CELL_SIZE)
+    CELLS_NUMBER = X_CELLS_NUMBER * Y_CELLS_NUMBER
+    
+    pheromone_grid = stigmergy.create(1)
+    
+    # TODO: Adjust the number of detractors according to WORLD_DATA.DETRACTOR_FRACTION
+    robot_state = {.role = "cooperator", .tracked_pheromone = "food", .dropped_pheromone = "home", .last_poi_timestamp = 0}
+
+    step_count = 0
+    last_cell_index = get_cell_index(pose.position)
+
+    math.rng.setseed(id)
+    step_offset = math.rng.uniform(7)
+    robot_global_direction = math.rng.uniform(-math.pi, math.pi)
+
+    simulation_initialized = 1
 }
 
 function move(heading_instruction){
@@ -87,15 +84,15 @@ function get_cell_index(position){
 
     var shifted_position = {}  # Consider the origin in the lower left corner for convenience
 
-    shifted_position.x = position.x - (WORLD_CENTER.x - WORLD_LENGTH / 2.0)
-    shifted_position.y = position.y - (WORLD_CENTER.y - WORLD_HEIGHT / 2.0)
+    shifted_position.x = position.x - (WORLD_DATA.WORLD_CENTER.X - WORLD_DATA.WORLD_LENGTH / 2.0)
+    shifted_position.y = position.y - (WORLD_DATA.WORLD_CENTER.Y - WORLD_DATA.WORLD_HEIGHT / 2.0)
 
-    if (shifted_position.x < 0 or shifted_position.x >= WORLD_LENGTH or shifted_position.y < 0 or shifted_position.y >= WORLD_HEIGHT){
+    if (shifted_position.x < 0 or shifted_position.x >= WORLD_DATA.WORLD_LENGTH or shifted_position.y < 0 or shifted_position.y >= WORLD_DATA.WORLD_HEIGHT){
         # log("WARNING get_cell_index() : Map limits exceeded")
         return nil
     } else {
-        var x_index = math.round_down(shifted_position.x / CELL_SIZE)
-        var y_index = math.round_down(shifted_position.y / CELL_SIZE)
+        var x_index = math.round_down(shifted_position.x / WORLD_DATA.CELL_SIZE)
+        var y_index = math.round_down(shifted_position.y / WORLD_DATA.CELL_SIZE)
         return (x_index + (y_index) * X_CELLS_NUMBER)
     }
 }
@@ -107,12 +104,12 @@ function get_cell_position(cell_index){
     var y_index = math.round_down(cell_index / Y_CELLS_NUMBER)
 
     var shifted_position = {}
-    shifted_position.x = (x_index + 0.5) * CELL_SIZE
-    shifted_position.y = (y_index + 0.5) * CELL_SIZE
+    shifted_position.x = (x_index + 0.5) * WORLD_DATA.CELL_SIZE
+    shifted_position.y = (y_index + 0.5) * WORLD_DATA.CELL_SIZE
 
     var position = {}
-    position.x = shifted_position.x + (WORLD_CENTER.x - WORLD_LENGTH / 2.0)
-    position.y = shifted_position.y + (WORLD_CENTER.y - WORLD_HEIGHT / 2.0)
+    position.x = shifted_position.x + (WORLD_DATA.WORLD_CENTER.X - WORLD_DATA.WORLD_LENGTH / 2.0)
+    position.y = shifted_position.y + (WORLD_DATA.WORLD_CENTER.Y - WORLD_DATA.WORLD_HEIGHT / 2.0)
 
     return position
 }
@@ -195,14 +192,14 @@ function pheromone_intensity(steps_number){
     # Return the robot pheromone intensity
     # Equation (1) implementation
 
-    return (1000 * math.exp(- LAMBDA * steps_number))
+    return (1000 * math.exp(- WORLD_DATA.LAMBDA * steps_number))
 }
 
 function pheromone_evaporation(intensity, steps_number){
     # Return the pheromone intensity with the evaporation that has occurred since the last deposit
     # Equation (2) implementation
 
-    return (intensity - EVAPORATION_RATE * steps_number)
+    return (intensity - WORLD_DATA.EVAPORATION_RATE * steps_number)
 }
 
 function robot_motion(){
