@@ -1,13 +1,13 @@
-<data WORLD_LENGTH="20.0"
-      WORLD_HEIGHT="20.0"
-      CELL_SIZE="0.14"
+<data WORLD_LENGTH="5.0"
+      WORLD_HEIGHT="5.0"
+      CELL_SIZE="0.3"
       DETRACTOR_FRACTION="0"
-      LAMBDA = "0.0625"
-      EVAPORATION_RATE="5.0"
-      KHEPERA_NB="20">
+      LAMBDA = "0.0125"
+      EVAPORATION_RATE="1.0"
+      KHEPERA_NB="8">
     <WORLD_CENTER X="0.0" Y="0.0"/>
     <POI_AREA>
-        <HOME X="0.0" Y="0.0" RADIUS="1.0"/>
-        <GOAL X="-7.0" Y="-7.0" RADIUS="2.0"/>
+        <HOME X="0.0" Y="0.0" RADIUS="0.4"/>
+        <GOAL X="-2.0" Y="-2.0" RADIUS="0.3"/>
     </POI_AREA>
 </data>
