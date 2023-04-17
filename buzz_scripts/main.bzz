@@ -13,8 +13,9 @@ function step(){
     
         in_poi_result = is_in_poi(last_cell_index, POI_AREA)    # Check if the cell is in a POI
 
-        if (in_poi_result != nil){
-            update_robot_state(in_poi_result)
+        if (in_poi_result.pheromone_type != nil){
+            robot_global_direction = math.vec2.angle(math.vec2.sub(pose.position, in_poi_result.center))
+            update_robot_state(in_poi_result.pheromone_type)
         } else {
             last_cell_state = pheromone_grid.get(last_cell_index)
             update_cell_state(last_cell_state)
@@ -44,11 +45,11 @@ function init_simulation(){
         .2 = {.pheromone_type = "food_source", .center = math.vec2.new(WORLD_DATA.POI_AREA.GOAL.X, WORLD_DATA.POI_AREA.GOAL.Y), .radius = WORLD_DATA.POI_AREA.GOAL.RADIUS}
     }
     
-    PROBE_DIRECTION_RANGE = 0.8 * math.pi
-    MAX_PROBE_MAGNITUDE = 0.5
+    PROBE_DIRECTION_RANGE = 0.6 * math.pi
+    MAX_PROBE_MAGNITUDE = 1.0
     RANDOM_NOISE_FACTOR = 0.1 * math.pi
     STEPS_BETWEEN_TURNS = 7
-    RANDOM_VECTORS_NUMBER = 200
+    RANDOM_VECTORS_NUMBER = 100
 
     ## Initialization
     X_CELLS_NUMBER = math.round_up(WORLD_DATA.WORLD_LENGTH / WORLD_DATA.CELL_SIZE)
@@ -64,7 +65,7 @@ function init_simulation(){
     last_cell_index = get_cell_index(pose.position)
 
     math.rng.setseed(id)
-    step_offset = math.rng.uniform(7)
+    step_offset = math.rng.uniform(STEPS_BETWEEN_TURNS)
     robot_global_direction = math.rng.uniform(-math.pi, math.pi)
 
     simulation_initialized = 1
@@ -121,10 +122,11 @@ function is_in_poi(cell_index, poi_area){
     var poi_type = {}
     foreach(poi_area, function(key, area){
         if (math.vec2.dis(cell_position, area.center) <= area.radius){
-            poi_type.result = area.pheromone_type
+            poi_type.pheromone_type = area.pheromone_type
+            poi_type.center = area.center
         }
     })
-    return poi_type.result
+    return poi_type
 }
 
 function update_robot_state(poi_type){
@@ -203,10 +205,17 @@ function pheromone_evaporation(intensity, steps_number){
 }
 
 function robot_motion(){
+    limits_vector = vec_to_limits()
+    if (math.vec2.length(limits_vector) < 0.15){
+        robot_global_direction = math.wraptopi(math.vec2.angle(limits_vector) + math.pi)
+    }
+
     if ((step_count + step_offset) % STEPS_BETWEEN_TURNS == 0){
         var probe_index = 0
         var max_probed_intensity = 0
         robot_global_direction = pose.orientation.yaw
+
+        # log("--------------------------------------")
         while (probe_index < RANDOM_VECTORS_NUMBER){
             var probe_vector_magnitude = math.rng.uniform(MAX_PROBE_MAGNITUDE)
             var probe_vector_direction = math.rng.uniform(-PROBE_DIRECTION_RANGE, PROBE_DIRECTION_RANGE)
@@ -217,28 +226,37 @@ function robot_motion(){
             
             var probed_cell_index = get_cell_index(probe_vector_global)
             if (probed_cell_index != nil){  # Cell is inside the world
-
                 var probed_cell_state = pheromone_grid.get(probed_cell_index)
                 if (probed_cell_state != nil){  # Cell is not empty
 
                     var steps_since_last_deposit = step_count - probed_cell_state.timestamp
                     var probed_cell_intensity = pheromone_evaporation(probed_cell_state.intensity, steps_since_last_deposit)    # Compute intensity after evaporation
-                    if (probed_cell_state.type == robot_state.tracked_pheromone){   # Cell contains the desired pheromone 
-                        log("Robot: ", id, " Desired pheromone find !")
+                    if (probed_cell_state.type == robot_state.tracked_pheromone){   # Cell contains the desired pheromone
                         if (probed_cell_intensity > max_probed_intensity){
                             max_probed_intensity = probed_cell_intensity
                             robot_global_direction = probe_vector_direction + pose.orientation.yaw
                         }
                     }
                 }
-            } else {
-                # TODO: Change wall reflection trigger (wrong place in the program for now) and behavior and add reflection on home and food area
-                robot_global_direction = math.wraptopi(robot_global_direction + math.pi)
             }
             probe_index = probe_index + 1
+        }
+        if (max_probed_intensity != 0){
+            set_leds(0,0,255)
+        } else {
+            set_leds(0,255,0)
         }
         robot_global_direction = robot_global_direction + math.rng.uniform(-RANDOM_NOISE_FACTOR, RANDOM_NOISE_FACTOR)
     }
 
     move(robot_global_direction)
+}
+
+function vec_to_limits(){
+    var vec_n = math.vec2.new(0, (WORLD_DATA.WORLD_HEIGHT / 2.0 - WORLD_DATA.WORLD_CENTER.Y) - pose.position.y)
+    var vec_s = math.vec2.new(0 , - (WORLD_DATA.WORLD_HEIGHT / 2.0 - WORLD_DATA.WORLD_CENTER.Y) - pose.position.y)
+    var vec_e = math.vec2.new((WORLD_DATA.WORLD_LENGTH / 2.0 - WORLD_DATA.WORLD_CENTER.X) - pose.position.x, 0)
+    var vec_o = math.vec2.new(- (WORLD_DATA.WORLD_LENGTH / 2.0 - WORLD_DATA.WORLD_CENTER.X) - pose.position.x, 0)
+
+    return math.vec2.min(math.vec2.min(vec_n, vec_s), math.vec2.min(vec_e, vec_o))
 }
