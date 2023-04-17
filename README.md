@@ -49,5 +49,5 @@ make
 
 ```
 cd SwarmProject
-. run.sh
+python main.py
 ```
