@@ -11,9 +11,17 @@ def main(args):
         dirs = Path("experiments").iterdir()
 
     for file in dirs:
+        log_file = f"logs/{file.name}"
+        # setting up the argos file
         configs = ps.get_config(file)
         ps.from_template("launch/TEMPLATE.argos", configs, headless=args.headless)
-        os.system("./run.sh launch/autogenColony.argos")
+
+        # executing the sim
+        Path("logs").mkdir(exist_ok=True)
+        os.system(f"./run.sh launch/autogenColony.argos {log_file}")
+
+        # collecting & treating the logs
+        data = ps.parse_logs(log_file)
 
 
 if __name__ == '__main__':
