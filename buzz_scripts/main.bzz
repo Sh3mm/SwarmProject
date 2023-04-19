@@ -23,8 +23,8 @@ function step(){
     } 
 
     robot_motion()
-
-    debug.print(robot_state.tracked_pheromone)
+    var message = string.concat(robot_state.role, ": ", robot_state.tracked_pheromone)
+    debug.print(message)
     last_cell_index = current_cell_index
     step_count = step_count + 1
 }
@@ -58,15 +58,23 @@ function init_simulation(){
     
     pheromone_grid = stigmergy.create(1)
     
-    # TODO: Adjust the number of detractors according to WORLD_DATA.DETRACTOR_FRACTION
-    robot_state = {.role = "cooperator", .tracked_pheromone = "food", .dropped_pheromone = "home", .last_poi_timestamp = 0}
+    detractors_count = math.ceil(WORLD_DATA.KHEPERA_NB * WORLD_DATA.DETRACTOR_FRACTION)
+    if (id <= detractors_count-1) {
+        robot_state = {.role = "detractor", .tracked_pheromone = "food", .dropped_pheromone = "food", .last_poi_timestamp = 0}
+        # detractors facing goal
+        pose.orientation.yaw = 3 * math.pi / 2.0
+        robot_global_direction = 3 * math.pi / 2.0
+    }
+    else{
+        robot_state = {.role = "cooperator", .tracked_pheromone = "food", .dropped_pheromone = "home", .last_poi_timestamp = 0}
+        robot_global_direction = math.rng.uniform(-math.pi, math.pi)
+    }
 
     step_count = 0
     last_cell_index = get_cell_index(pose.position)
 
     math.rng.setseed(id)
     step_offset = math.rng.uniform(STEPS_BETWEEN_TURNS)
-    robot_global_direction = math.rng.uniform(-math.pi, math.pi)
 
     simulation_initialized = 1
 }
@@ -139,7 +147,9 @@ function update_robot_state(poi_type){
             robot_state.dropped_pheromone = "home"
 
         } else{
-            # TODO: Add what a detractor does when it passes through the home base
+            robot_state.last_poi_timestamp = step_count 
+            robot_state.tracked_pheromone = "food" 
+            # drop pheromone always food
         }
 
     } else if (poi_type == "food_source"){
@@ -149,7 +159,8 @@ function update_robot_state(poi_type){
             robot_state.dropped_pheromone = "food"
 
         } else {
-            # TODO: Add what a detractor does when it passes through a food source
+            robot_state.tracked_pheromone = "home" 
+            # drop pheromone always food
         }
     }
 }
@@ -160,30 +171,22 @@ function update_cell_state(current_cell_state){
     var new_cell_state = {}
     var steps_since_poi = step_count - robot_state.last_poi_timestamp
 
-    if (robot_state.role == "cooperator"){
-        if (current_cell_state != nil){
-            var steps_since_last_deposit = step_count - current_cell_state.timestamp
-            var cell_type = current_cell_state.type
-            var cell_intensity = pheromone_evaporation(current_cell_state.intensity, steps_since_last_deposit)
+    if (current_cell_state != nil){
+        var steps_since_last_deposit = step_count - current_cell_state.timestamp
+        var cell_type = current_cell_state.type
+        var cell_intensity = pheromone_evaporation(current_cell_state.intensity, steps_since_last_deposit)
     
-            if (cell_type == robot_state.dropped_pheromone){   # Same pheromone, keep the maximum
-                new_cell_state.type = cell_type
-                new_cell_state.intensity = math.max(cell_intensity, pheromone_intensity(steps_since_poi))
+        if (cell_type == robot_state.dropped_pheromone){   # Same pheromone, keep the maximum
+            new_cell_state.type = cell_type
+            new_cell_state.intensity = math.max(cell_intensity, pheromone_intensity(steps_since_poi))
 
-            } else {    # Different pheromone, keep the new one
-                new_cell_state.type = robot_state.dropped_pheromone
-                new_cell_state.intensity = pheromone_intensity(steps_since_poi)
-            }
-    
-        } else {    # If the cell is empty
+        } else {    # Different pheromone, keep the new one
             new_cell_state.type = robot_state.dropped_pheromone
             new_cell_state.intensity = pheromone_intensity(steps_since_poi)
         }
-
-    } else if (robot_state.role == "detractor"){
-        # TODO: Implement detractor deposit behavior
-
-        new_cell_state.type = "food"
+    
+    } else {    # If the cell is empty
+        new_cell_state.type = robot_state.dropped_pheromone
         new_cell_state.intensity = pheromone_intensity(steps_since_poi)
     }
     
@@ -249,7 +252,8 @@ function robot_motion(){
         robot_global_direction = robot_global_direction + math.rng.uniform(-RANDOM_NOISE_FACTOR, RANDOM_NOISE_FACTOR)
     }
 
-    move(robot_global_direction)
+    if (robot_state.role == "cooperator" or (robot_state.role == "detractor" and step_count>=WORLD_DATA.T_ATTACK))
+        move(robot_global_direction)
 }
 
 function vec_to_limits(){
