@@ -37,6 +37,8 @@ function destroy(){
 
 function init_simulation(){
     ## Parameters
+    math.rng.setseed(id)
+    
     STEP_SIZE = 0.1     # According to the launch file
     ROBOT_VELOCITY = 140
     
@@ -61,9 +63,7 @@ function init_simulation(){
     detractors_count = math.ceil(WORLD_DATA.KHEPERA_NB * WORLD_DATA.DETRACTOR_FRACTION)
     if (id <= detractors_count-1) {
         robot_state = {.role = "detractor", .tracked_pheromone = "food", .dropped_pheromone = "food", .last_poi_timestamp = 0}
-        # detractors facing goal
-        pose.orientation.yaw = 3 * math.pi / 2.0
-        robot_global_direction = 3 * math.pi / 2.0
+        robot_global_direction = 3 * math.pi / 2.0  # Detractors facing goal
     }
     else{
         robot_state = {.role = "cooperator", .tracked_pheromone = "food", .dropped_pheromone = "home", .last_poi_timestamp = 0}
@@ -73,7 +73,6 @@ function init_simulation(){
     step_count = 0
     last_cell_index = get_cell_index(pose.position)
 
-    math.rng.setseed(id)
     step_offset = math.rng.uniform(STEPS_BETWEEN_TURNS)
 
     simulation_initialized = 1
