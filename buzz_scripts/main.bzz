@@ -12,21 +12,22 @@ function step(){
     if (current_cell_index != last_cell_index){     # Updates the robot state and cell state once, when the robot moves out
     
         in_poi_result = is_in_poi(last_cell_index, POI_AREA)    # Check if the cell is in a POI
-
         if (in_poi_result.pheromone_type != nil){
-            robot_global_direction = math.vec2.angle(math.vec2.sub(pose.position, in_poi_result.center))
             update_robot_state(in_poi_result.pheromone_type)
+            
         } else {
             last_cell_state = pheromone_grid.get(last_cell_index)
             update_cell_state(last_cell_state)
         }
-    } 
+    }
 
     robot_motion()
-    var message = string.concat(robot_state.role, ": ", robot_state.tracked_pheromone)
-    debug.print(message)
     last_cell_index = current_cell_index
     step_count = step_count + 1
+
+    # Debugging
+    var message = string.concat(robot_state.role, ": ", robot_state.tracked_pheromone)
+    debug.print(message)
 }
 
 function reset(){
@@ -49,9 +50,11 @@ function init_simulation(){
     
     PROBE_DIRECTION_RANGE = 0.6 * math.pi
     MAX_PROBE_MAGNITUDE = 1.0
-    RANDOM_NOISE_FACTOR = 0.1 * math.pi
+    RANDOM_NOISE_FACTOR = 0.05 * math.pi
     STEPS_BETWEEN_TURNS = 7
     RANDOM_VECTORS_NUMBER = 100
+
+    STEP_WITHOUT_TURN_AFTER_REFLECTION = 5
 
     ## Initialization
     X_CELLS_NUMBER = math.round_up(WORLD_DATA.WORLD_LENGTH / WORLD_DATA.CELL_SIZE)
@@ -71,6 +74,9 @@ function init_simulation(){
     }
 
     step_count = 0
+    no_turn_counter = 0
+    round_trip = 0
+    in_poi_result = {}
     last_cell_index = get_cell_index(pose.position)
 
     step_offset = math.rng.uniform(STEPS_BETWEEN_TURNS)
@@ -141,14 +147,18 @@ function update_robot_state(poi_type){
 
     if (poi_type == "home_base"){
         if (robot_state.role == "cooperator"){
+            if (robot_state.dropped_pheromone == "food"){   # Counter of the number of successful round trips
+                round_trip = round_trip + 1
+                log("Robot: ", id, " Round trip: ", round_trip)
+            }
+
             robot_state.last_poi_timestamp = step_count
             robot_state.tracked_pheromone = "food"
             robot_state.dropped_pheromone = "home"
 
         } else{
             robot_state.last_poi_timestamp = step_count 
-            robot_state.tracked_pheromone = "food" 
-            # drop pheromone always food
+            robot_state.tracked_pheromone = "food"  # Drop pheromone always food
         }
 
     } else if (poi_type == "food_source"){
@@ -158,8 +168,7 @@ function update_robot_state(poi_type){
             robot_state.dropped_pheromone = "food"
 
         } else {
-            robot_state.tracked_pheromone = "home" 
-            # drop pheromone always food
+            robot_state.tracked_pheromone = "home"  # Drop pheromone always food
         }
     }
 }
@@ -208,16 +217,20 @@ function pheromone_evaporation(intensity, steps_number){
 
 function robot_motion(){
     limits_vector = vec_to_limits()
-    if (math.vec2.length(limits_vector) < 0.15){
-        robot_global_direction = math.wraptopi(math.vec2.angle(limits_vector) + math.pi)
+    if (math.vec2.length(limits_vector) < 0.15 and no_turn_counter > STEP_WITHOUT_TURN_AFTER_REFLECTION){
+        robot_global_direction = math.wraptopi(math.vec2.angle(limits_vector) + math.pi)    # Reflection on world limits
+        no_turn_counter = 0
+
+    } else if (in_poi_result.pheromone_type != nil and no_turn_counter > STEP_WITHOUT_TURN_AFTER_REFLECTION){
+        robot_global_direction = math.vec2.angle(math.vec2.sub(pose.position, in_poi_result.center))    # Reflection on POI
+        no_turn_counter = 0
     }
 
-    if ((step_count + step_offset) % STEPS_BETWEEN_TURNS == 0){
+    if (((step_count + step_offset) % STEPS_BETWEEN_TURNS == 0) and (no_turn_counter > STEP_WITHOUT_TURN_AFTER_REFLECTION)){
         var probe_index = 0
         var max_probed_intensity = 0
-        robot_global_direction = pose.orientation.yaw
 
-        # log("--------------------------------------")
+        # If all the probed cells are empty the last robot_global_direction is used
         while (probe_index < RANDOM_VECTORS_NUMBER){
             var probe_vector_magnitude = math.rng.uniform(MAX_PROBE_MAGNITUDE)
             var probe_vector_direction = math.rng.uniform(-PROBE_DIRECTION_RANGE, PROBE_DIRECTION_RANGE)
@@ -243,13 +256,19 @@ function robot_motion(){
             }
             probe_index = probe_index + 1
         }
+
         if (max_probed_intensity != 0){
-            set_leds(0,0,255)
+            set_leds(0,0,255)   # Blue led if pheromone detected
         } else {
-            set_leds(0,255,0)
+            set_leds(0,255,0)   # Green else
         }
-        robot_global_direction = robot_global_direction + math.rng.uniform(-RANDOM_NOISE_FACTOR, RANDOM_NOISE_FACTOR)
+
+        robot_global_direction = robot_global_direction + math.rng.uniform(-RANDOM_NOISE_FACTOR, RANDOM_NOISE_FACTOR)   # Add noise on the direction
     }
+    if (no_turn_counter < STEP_WITHOUT_TURN_AFTER_REFLECTION){
+        set_leds(255,0,0)
+    }
+    no_turn_counter = no_turn_counter + 1
 
     if (robot_state.role == "cooperator" or (robot_state.role == "detractor" and step_count>=WORLD_DATA.T_ATTACK))
         move(robot_global_direction)
