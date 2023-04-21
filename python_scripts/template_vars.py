@@ -15,7 +15,7 @@ TEMPLATE_VARS = {
           <user_functions label="buzz_qt" />
         <camera>
           <placements>
-            <placement index="0" position="0,0,45" look_at="0,0,0" up="0,1,0" lens_focal_length="220"/>
+            <placement index="0" position="0,0,45" look_at="0,0,0" up="0,1,0" lens_focal_length="110"/>
           </placements>
         </camera>
         </qt-opengl>
