@@ -28,6 +28,8 @@ function step(){
     # Debugging
     var message = string.concat(robot_state.role, ": ", robot_state.tracked_pheromone)
     debug.print(message)
+
+    # if (id == 0){pheromone_grid.foreach(function(key, value, robot_id){log(value.intensity)})}
 }
 
 function reset(){
@@ -54,7 +56,7 @@ function init_simulation(){
     STEPS_BETWEEN_TURNS = 7
     RANDOM_VECTORS_NUMBER = 100
 
-    STEP_WITHOUT_TURN_AFTER_REFLECTION = 5
+    STEP_WITHOUT_TURN_AFTER_REFLECTION = 10
 
     ## Initialization
     X_CELLS_NUMBER = math.round_up(WORLD_DATA.WORLD_LENGTH / WORLD_DATA.CELL_SIZE)
@@ -211,13 +213,14 @@ function pheromone_intensity(steps_number){
 function pheromone_evaporation(intensity, steps_number){
     # Return the pheromone intensity with the evaporation that has occurred since the last deposit
     # Equation (2) implementation
-
+    var new_intensity = intensity - WORLD_DATA.EVAPORATION_RATE * steps_number
+    if (new_intensity < 0){new_intensity = 0}
     return (intensity - WORLD_DATA.EVAPORATION_RATE * steps_number)
 }
 
 function robot_motion(){
     limits_vector = vec_to_limits()
-    if (math.vec2.length(limits_vector) < 0.15 and no_turn_counter > STEP_WITHOUT_TURN_AFTER_REFLECTION){
+    if (math.vec2.length(limits_vector) < 0.3 and no_turn_counter > STEP_WITHOUT_TURN_AFTER_REFLECTION){
         robot_global_direction = math.wraptopi(math.vec2.angle(limits_vector) + math.pi)    # Reflection on world limits
         no_turn_counter = 0
 
