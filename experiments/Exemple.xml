@@ -2,9 +2,9 @@
       WORLD_HEIGHT="10.0"
       CELL_SIZE="0.14"
       DETRACTOR_FRACTION="0"
-      LAMBDA = "0.00825"
-      EVAPORATION_RATE="2.0"
-      KHEPERA_NB="8"
+      LAMBDA = "0.02"
+      EVAPORATION_RATE="1.0"
+      KHEPERA_NB="12"
       T_ATTACK="100">
     <WORLD_CENTER X="0.0" Y="0.0"/>
     <POI_AREA>
