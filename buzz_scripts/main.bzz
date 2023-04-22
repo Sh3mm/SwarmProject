@@ -90,7 +90,8 @@ function move(heading_instruction){
 
     var velocity = math.vec2.newp(ROBOT_VELOCITY, heading_instruction)  # Global velocity vector
     var velocity_robot_heading = math.vec2.rotate(velocity, -pose.orientation.yaw)  # Robot velocity vector
-    goto(velocity_robot_heading.x, velocity_robot_heading.y)
+    var robot_command = math.vec2.add(velocity_robot_heading, CA())
+    goto(robot_command.x, robot_command.y)
 }
 
 function get_cell_index(position){
@@ -287,4 +288,24 @@ function vec_to_limits(){
     var vec_o = math.vec2.new(- (WORLD_DATA.WORLD_LENGTH / 2.0 - WORLD_DATA.WORLD_CENTER.X) - pose.position.x, 0)
 
     return math.vec2.min(math.vec2.min(vec_n, vec_s), math.vec2.min(vec_e, vec_o))
+}
+
+function CA(){
+    var proximity_distances = {}
+
+    ## Compute obstacles distance ##
+    foreach(proximity, function(key, data) {
+        if (key == 0 or key == 1 or key == 7){
+            proximity_distances[key] = {}
+            if (data.value == 0){
+                proximity_distances[key].distance = nil                                             # Obstacle further than 12cm
+            } else if (data.value == 1){
+                proximity_distances[key].distance = 0.04                                               # Obstacle closer than 4cm
+            } else {
+                proximity_distances[key].distance = -math.log((data.value + 0.085)/4.14)/33.0       # Otherwise apply the exponential law
+            }
+        }
+    })
+
+    return math.vec2.new(0,0)
 }
