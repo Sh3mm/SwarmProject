@@ -225,11 +225,12 @@ function robot_motion(){
         no_turn_counter = 0
 
     } else if (in_poi_result.pheromone_type != nil and no_turn_counter > STEP_WITHOUT_TURN_AFTER_REFLECTION){
+        # TODO : Reflection only if it's the searched POI 
         robot_global_direction = math.vec2.angle(math.vec2.sub(pose.position, in_poi_result.center))    # Reflection on POI
         no_turn_counter = 0
     }
 
-    if (((step_count + step_offset) % STEPS_BETWEEN_TURNS == 0) and (no_turn_counter > STEP_WITHOUT_TURN_AFTER_REFLECTION)){
+    if (((step_count + step_offset) % STEPS_BETWEEN_TURNS == 0) and (no_turn_counter > STEP_WITHOUT_TURN_AFTER_REFLECTION)){    # No pheromone searching during reflection
         var probe_index = 0
         var max_probed_intensity = 0
 
