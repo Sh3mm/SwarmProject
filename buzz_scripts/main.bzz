@@ -43,7 +43,7 @@ function init_simulation(){
     math.rng.setseed(id)
     
     STEP_SIZE = 0.1     # According to the launch file
-    ROBOT_VELOCITY = 140
+    ROBOT_VELOCITY = 80
     
     POI_AREA = {    # poi : point of interest i.e. home base or food source
         .1 = {.pheromone_type = "home_base", .center = math.vec2.new(WORLD_DATA.POI_AREA.HOME.X, WORLD_DATA.POI_AREA.HOME.Y), .radius = WORLD_DATA.POI_AREA.HOME.RADIUS},
@@ -51,12 +51,10 @@ function init_simulation(){
     }
     
     PROBE_DIRECTION_RANGE = 0.6 * math.pi
-    MAX_PROBE_MAGNITUDE = 1.0
+    MAX_PROBE_MAGNITUDE = 2.0
     RANDOM_NOISE_FACTOR = 0.05 * math.pi
     STEPS_BETWEEN_TURNS = 7
-    RANDOM_VECTORS_NUMBER = 100
-
-    STEP_WITHOUT_TURN_AFTER_REFLECTION = 10
+    RANDOM_VECTORS_NUMBER = 200
 
     ## Initialization
     X_CELLS_NUMBER = math.round_up(WORLD_DATA.WORLD_LENGTH / WORLD_DATA.CELL_SIZE)
@@ -76,8 +74,8 @@ function init_simulation(){
     }
 
     step_count = 0
-    no_turn_counter = 0
     round_trip = 0
+    out_poi = 0
     in_poi_result = {}
     last_cell_index = get_cell_index(pose.position)
 
@@ -219,18 +217,20 @@ function pheromone_evaporation(intensity, steps_number){
 }
 
 function robot_motion(){
+    if (in_poi_result.pheromone_type == nil){out_poi = 1}   # True if out of a POI
+
     limits_vector = vec_to_limits()
-    if (math.vec2.length(limits_vector) < 0.3 and no_turn_counter > STEP_WITHOUT_TURN_AFTER_REFLECTION){
-        robot_global_direction = math.wraptopi(math.vec2.angle(limits_vector) + math.pi)    # Reflection on world limits
-        no_turn_counter = 0
+    if (math.vec2.length(limits_vector) < 0.5){ # Takes as direction the normal at the limit when it comes too close to it
+        robot_global_direction = math.wraptopi(math.vec2.angle(limits_vector) + math.pi)
+        set_leds(255,0,0)   # Red led if reflection on limits
 
-    } else if (in_poi_result.pheromone_type != nil and no_turn_counter > STEP_WITHOUT_TURN_AFTER_REFLECTION){
-        # TODO : Reflection only if it's the searched POI 
-        robot_global_direction = math.vec2.angle(math.vec2.sub(pose.position, in_poi_result.center))    # Reflection on POI
-        no_turn_counter = 0
-    }
+    } else if (in_poi_result.pheromone_type != nil and out_poi){    # Takes the opposite direction when entering the POI
+        # TODO : Reflection only if it's the searched POI
+        robot_global_direction = math.wraptopi(robot_global_direction + math.pi)
+        out_poi = 0
+        set_leds(255,69,0)  # Yellow led if reflection on POI
 
-    if (((step_count + step_offset) % STEPS_BETWEEN_TURNS == 0) and (no_turn_counter > STEP_WITHOUT_TURN_AFTER_REFLECTION)){    # No pheromone searching during reflection
+    } else if ((step_count + step_offset) % STEPS_BETWEEN_TURNS == 0){  # Else move according to the pheromones
         var probe_index = 0
         var max_probed_intensity = 0
 
@@ -245,6 +245,8 @@ function robot_motion(){
             
             var probed_cell_index = get_cell_index(probe_vector_global)
             if (probed_cell_index != nil){  # Cell is inside the world
+
+                # TODO: Check if probed cell is in a POI
                 var probed_cell_state = pheromone_grid.get(probed_cell_index)
                 if (probed_cell_state != nil){  # Cell is not empty
 
@@ -264,15 +266,11 @@ function robot_motion(){
         if (max_probed_intensity != 0){
             set_leds(0,0,255)   # Blue led if pheromone detected
         } else {
-            set_leds(0,255,0)   # Green else
+            set_leds(0,255,0)   # Green led if no pheromone detected
         }
-
-        robot_global_direction = robot_global_direction + math.rng.uniform(-RANDOM_NOISE_FACTOR, RANDOM_NOISE_FACTOR)   # Add noise on the direction
     }
-    if (no_turn_counter < STEP_WITHOUT_TURN_AFTER_REFLECTION){
-        set_leds(255,0,0)
-    }
-    no_turn_counter = no_turn_counter + 1
+    
+    robot_global_direction = robot_global_direction + math.rng.uniform(-RANDOM_NOISE_FACTOR, RANDOM_NOISE_FACTOR)   # Add noise on the direction
 
     if (robot_state.role == "cooperator" or (robot_state.role == "detractor" and step_count>=WORLD_DATA.T_ATTACK))
         move(robot_global_direction)

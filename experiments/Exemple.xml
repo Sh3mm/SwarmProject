@@ -2,7 +2,7 @@
       WORLD_HEIGHT="10.0"
       CELL_SIZE="0.14"
       DETRACTOR_FRACTION="0"
-      LAMBDA = "0.02"
+      LAMBDA = "0.01"
       EVAPORATION_RATE="1.0"
       KHEPERA_NB="12"
       T_ATTACK="100">
