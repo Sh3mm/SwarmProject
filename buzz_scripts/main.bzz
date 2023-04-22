@@ -10,6 +10,7 @@ function step(){
 
     current_cell_index = get_cell_index(pose.position)
     if (current_cell_index != last_cell_index){     # Updates the robot state and cell state once, when the robot moves out
+        log_data()  # Monitoring
     
         in_poi_result = is_in_poi(last_cell_index, POI_AREA)    # Check if the cell is in a POI
         if (in_poi_result.pheromone_type != nil){
@@ -25,7 +26,7 @@ function step(){
     last_cell_index = current_cell_index
     step_count = step_count + 1
 
-    # Debugging
+    ## Debugging
     var message = string.concat(robot_state.role, ": ", robot_state.tracked_pheromone)
     debug.print(message)
 }
@@ -152,7 +153,7 @@ function update_robot_state(poi_type){
         if (robot_state.role == "cooperator"){
             if (robot_state.dropped_pheromone == "food"){   # Counter of the number of successful round trips
                 round_trip = round_trip + 1
-                log("Robot: ", id, " Round trip: ", round_trip)
+                # log("Robot: ", id, " Round trip: ", round_trip)
             }
 
             robot_state.last_poi_timestamp = step_count
@@ -308,4 +309,15 @@ function CA(){
     })
 
     return math.vec2.new(0,0)
+}
+
+function log_data(){
+    var last_cell_position = get_cell_position(last_cell_index)
+    log(step_count, ":", id, ":{",
+    "X=", last_cell_position.x,
+    ",Y=", last_cell_position.y,
+    ",role=", robot_state.role,
+    ",dropped_pheromone=", robot_state.dropped_pheromone,
+    ",last_poi_timestamp=", robot_state.last_poi_timestamp
+    ,"}")
 }
