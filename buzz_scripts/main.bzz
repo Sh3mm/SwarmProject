@@ -54,13 +54,12 @@ function init_simulation(){
     STEPS_BETWEEN_TURNS = 7
     RANDOM_VECTORS_NUMBER = 200
 
-    ## Initialization
+    ## World initialisation
     X_CELLS_NUMBER = math.round_up(WORLD_DATA.WORLD_LENGTH / WORLD_DATA.CELL_SIZE)
     Y_CELLS_NUMBER = math.round_up(WORLD_DATA.WORLD_HEIGHT / WORLD_DATA.CELL_SIZE)
     CELLS_NUMBER = X_CELLS_NUMBER * Y_CELLS_NUMBER
     
-    pheromone_grid = stigmergy.create(1)
-    
+    ## Robot initialisation
     detractors_count = math.ceil(WORLD_DATA.KHEPERA_NB * WORLD_DATA.DETRACTOR_FRACTION)
     if (id <= detractors_count-1) {
         robot_state = {.role = "detractor", .tracked_pheromone = "food", .dropped_pheromone = "food", .last_poi_timestamp = 0}
@@ -70,17 +69,19 @@ function init_simulation(){
         robot_state = {.role = "cooperator", .tracked_pheromone = "food", .dropped_pheromone = "home", .last_poi_timestamp = 0}
         robot_global_direction = math.rng.uniform(-math.pi, math.pi)
     }
-
+    
+    ## Variable initialisation
+    pheromone_grid = stigmergy.create(1)
     step_count = 0
-    round_trip = 0
     out_poi = 0
     previous_robot_state = table_copy(robot_state)
     in_poi_result = {}
     last_cell_index = get_cell_index(pose.position)
-
     step_offset = math.rng.uniform(STEPS_BETWEEN_TURNS)
-
     simulation_initialized = 1
+
+    ## Monitoring initialisation
+    round_trip = 0
 }
 
 function move(heading_instruction){
