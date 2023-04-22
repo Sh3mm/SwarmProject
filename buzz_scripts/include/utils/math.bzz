@@ -28,3 +28,11 @@ math.wraptopi = function(angle){
     }
     return xwrap
 }
+
+table_copy = function(t){
+    var t2 = {}
+    foreach(t, function(key, value) {
+        t2[key] = value
+      })
+    return t2
+}
