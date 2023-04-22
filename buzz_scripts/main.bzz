@@ -28,8 +28,6 @@ function step(){
     # Debugging
     var message = string.concat(robot_state.role, ": ", robot_state.tracked_pheromone)
     debug.print(message)
-
-    # if (id == 0){pheromone_grid.foreach(function(key, value, robot_id){log(value.intensity)})}
 }
 
 function reset(){
@@ -46,12 +44,12 @@ function init_simulation(){
     ROBOT_VELOCITY = 80
     
     POI_AREA = {    # poi : point of interest i.e. home base or food source
-        .1 = {.pheromone_type = "home_base", .center = math.vec2.new(WORLD_DATA.POI_AREA.HOME.X, WORLD_DATA.POI_AREA.HOME.Y), .radius = WORLD_DATA.POI_AREA.HOME.RADIUS},
-        .2 = {.pheromone_type = "food_source", .center = math.vec2.new(WORLD_DATA.POI_AREA.GOAL.X, WORLD_DATA.POI_AREA.GOAL.Y), .radius = WORLD_DATA.POI_AREA.GOAL.RADIUS}
+        .1 = {.pheromone_type = "home", .center = math.vec2.new(WORLD_DATA.POI_AREA.HOME.X, WORLD_DATA.POI_AREA.HOME.Y), .radius = WORLD_DATA.POI_AREA.HOME.RADIUS},
+        .2 = {.pheromone_type = "food", .center = math.vec2.new(WORLD_DATA.POI_AREA.GOAL.X, WORLD_DATA.POI_AREA.GOAL.Y), .radius = WORLD_DATA.POI_AREA.GOAL.RADIUS}
     }
     
     PROBE_DIRECTION_RANGE = 0.6 * math.pi
-    MAX_PROBE_MAGNITUDE = 2.0
+    MAX_PROBE_MAGNITUDE = 1.0
     RANDOM_NOISE_FACTOR = 0.05 * math.pi
     STEPS_BETWEEN_TURNS = 7
     RANDOM_VECTORS_NUMBER = 200
@@ -76,6 +74,7 @@ function init_simulation(){
     step_count = 0
     round_trip = 0
     out_poi = 0
+    previous_robot_state = table_copy(robot_state)
     in_poi_result = {}
     last_cell_index = get_cell_index(pose.position)
 
@@ -144,8 +143,9 @@ function is_in_poi(cell_index, poi_area){
 
 function update_robot_state(poi_type){
     # Update robot state according to the point of interest type
+    previous_robot_state = table_copy(robot_state)
 
-    if (poi_type == "home_base"){
+    if (poi_type == "home"){
         if (robot_state.role == "cooperator"){
             if (robot_state.dropped_pheromone == "food"){   # Counter of the number of successful round trips
                 round_trip = round_trip + 1
@@ -161,7 +161,7 @@ function update_robot_state(poi_type){
             robot_state.tracked_pheromone = "food"  # Drop pheromone always food
         }
 
-    } else if (poi_type == "food_source"){
+    } else if (poi_type == "food"){
         if (robot_state.role == "cooperator"){
             robot_state.last_poi_timestamp = step_count
             robot_state.tracked_pheromone = "home"
@@ -224,8 +224,7 @@ function robot_motion(){
         robot_global_direction = math.wraptopi(math.vec2.angle(limits_vector) + math.pi)
         set_leds(255,0,0)   # Red led if reflection on limits
 
-    } else if (in_poi_result.pheromone_type != nil and out_poi){    # Takes the opposite direction when entering the POI
-        # TODO : Reflection only if it's the searched POI
+    } else if (in_poi_result.pheromone_type == previous_robot_state.tracked_pheromone and out_poi){    # Takes the opposite direction when entering the searched POI
         robot_global_direction = math.wraptopi(robot_global_direction + math.pi)
         out_poi = 0
         set_leds(255,69,0)  # Yellow led if reflection on POI
@@ -246,10 +245,13 @@ function robot_motion(){
             var probed_cell_index = get_cell_index(probe_vector_global)
             if (probed_cell_index != nil){  # Cell is inside the world
 
-                # TODO: Check if probed cell is in a POI
+                var probed_in_poi_result = is_in_poi(probed_cell_index, POI_AREA)
                 var probed_cell_state = pheromone_grid.get(probed_cell_index)
-                if (probed_cell_state != nil){  # Cell is not empty
+                if (probed_in_poi_result.pheromone_type == robot_state.tracked_pheromone){    # Check if the probed cell is in the searched POI
+                    max_probed_intensity = 1000
+                    robot_global_direction = probe_vector_direction + pose.orientation.yaw
 
+                } else if (probed_cell_state != nil){  # Check if cell contains pheromone
                     var steps_since_last_deposit = step_count - probed_cell_state.timestamp
                     var probed_cell_intensity = pheromone_evaporation(probed_cell_state.intensity, steps_since_last_deposit)    # Compute intensity after evaporation
                     if (probed_cell_state.type == robot_state.tracked_pheromone){   # Cell contains the desired pheromone
