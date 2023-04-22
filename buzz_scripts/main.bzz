@@ -143,7 +143,8 @@ function is_in_poi(cell_index, poi_area){
 
 function update_robot_state(poi_type){
     # Update robot state according to the point of interest type
-    previous_robot_state = table_copy(robot_state)
+
+    previous_robot_state = table_copy(robot_state)  # Save last robot state for robot motion decision
 
     if (poi_type == "home"){
         if (robot_state.role == "cooperator"){
