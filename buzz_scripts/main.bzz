@@ -9,7 +9,8 @@ function step(){
     if (simulation_initialized != 1) {init_simulation()}
 
     current_cell_index = get_cell_index(pose.position)
-    if (current_cell_index != last_cell_index){     # Updates the robot state and cell state once, when the robot moves out
+    ## Updates the robot state and cell state once, when the robot moves out
+    if (current_cell_index != last_cell_index){
         log_data()  # Monitoring
     
         in_poi_result = is_in_poi(last_cell_index, POI_AREA)    # Check if the cell is in a POI
@@ -22,7 +23,17 @@ function step(){
         }
     }
 
+    ## Compute patience
+    # TODO : Change the decrease mechanism
+    if (robot_state.role == "cooperator" and pheromone_grid.get(current_cell_index) == nil){
+        compute_patience(0)
+    } else if (robot_state.role == "cooperator"){
+        compute_patience(pheromone_grid.get(current_cell_index).type == "food")
+    }
+
+    ## Robot motion according to pheromone grid
     robot_motion()
+
     last_cell_index = current_cell_index
     step_count = step_count + 1
 
@@ -64,10 +75,10 @@ function init_simulation(){
     detractors_count = math.ceil(WORLD_DATA.KHEPERA_NB * WORLD_DATA.DETRACTOR_FRACTION)
     if (id <= detractors_count-1) {
         robot_state = {.role = "detractor", .tracked_pheromone = "food", .dropped_pheromone = "food", .last_poi_timestamp = 0}
-        robot_global_direction = 3 * math.pi / 2.0  # Detractors facing goal
+        robot_global_direction = math.vec2.angle(math.vec2.sub(math.vec2.new(WORLD_DATA.POI_AREA.GOAL.X, WORLD_DATA.POI_AREA.GOAL.Y), pose.position))  # Detractors facing goal
     }
     else{
-        robot_state = {.role = "cooperator", .tracked_pheromone = "food", .dropped_pheromone = "home", .last_poi_timestamp = 0}
+        robot_state = {.role = "cooperator", .tracked_pheromone = "food", .dropped_pheromone = "home", .last_poi_timestamp = 0, .patience = WORLD_DATA.PATIENCE_MAX}    # Patience max when leaves the nest
         robot_global_direction = math.rng.uniform(-math.pi, math.pi)
     }
     
@@ -80,9 +91,6 @@ function init_simulation(){
     last_cell_index = get_cell_index(pose.position)
     step_offset = math.rng.uniform(STEPS_BETWEEN_TURNS)
     simulation_initialized = 1
-
-    ## Monitoring initialisation
-    round_trip = 0
 }
 
 function move(heading_instruction){
@@ -149,30 +157,26 @@ function update_robot_state(poi_type){
 
     previous_robot_state = table_copy(robot_state)  # Save last robot state for robot motion decision
 
-    if (poi_type == "home"){
-        if (robot_state.role == "cooperator"){
-            if (robot_state.dropped_pheromone == "food"){   # Counter of the number of successful round trips
-                round_trip = round_trip + 1
-                # log("Robot: ", id, " Round trip: ", round_trip)
-            }
+    if (robot_state.role == "cooperator"){
+        robot_state.last_poi_timestamp = step_count
 
-            robot_state.last_poi_timestamp = step_count
+        if (poi_type == "home"){
             robot_state.tracked_pheromone = "food"
             robot_state.dropped_pheromone = "home"
 
-        } else{
-            robot_state.last_poi_timestamp = step_count 
-            robot_state.tracked_pheromone = "food"  # Drop pheromone always food
-        }
-
-    } else if (poi_type == "food"){
-        if (robot_state.role == "cooperator"){
-            robot_state.last_poi_timestamp = step_count
+        } else if (poi_type == "food"){
             robot_state.tracked_pheromone = "home"
             robot_state.dropped_pheromone = "food"
+            robot_state.patience = WORLD_DATA.PATIENCE_MAX
+        }
 
-        } else {
-            robot_state.tracked_pheromone = "home"  # Drop pheromone always food
+    } else if (robot_state.role == "detractor"){
+        if (poi_type == "home"){
+            robot_state.last_poi_timestamp = step_count 
+            robot_state.tracked_pheromone = "food"  # Always drop food pheromone
+
+        } else if (poi_type == "food"){
+            # Do nothing
         }
     }
 }
@@ -183,26 +187,44 @@ function update_cell_state(current_cell_state){
     var new_cell_state = {}
     var steps_since_poi = step_count - robot_state.last_poi_timestamp
 
+    ## Compute the pheromones type and intensity
     if (current_cell_state != nil){
-        var steps_since_last_deposit = step_count - current_cell_state.timestamp
+        var steps_since_last_deposit = step_count - current_cell_state.timestamp    # Computes time since last deposit
         var cell_type = current_cell_state.type
+
+        ## Compute pheromones (POI and cautionary) after evaporation
         var cell_intensity = pheromone_evaporation(current_cell_state.intensity, steps_since_last_deposit)
-    
+        var cell_cautionary_intensity = pheromone_evaporation(current_cell_state.cautionary_intensity, steps_since_last_deposit)
+        
+        ## Compute POI pheromone type and intensity
         if (cell_type == robot_state.dropped_pheromone){   # Same pheromone, keep the maximum
             new_cell_state.type = cell_type
             new_cell_state.intensity = math.max(cell_intensity, pheromone_intensity(steps_since_poi))
-
         } else {    # Different pheromone, keep the new one
             new_cell_state.type = robot_state.dropped_pheromone
             new_cell_state.intensity = pheromone_intensity(steps_since_poi)
+        }
+
+        ## Compute cautionary pheromone intensity
+        if (robot_state.role == "cooperator"){
+            new_cell_state.cautionary_intensity = math.max(cell_cautionary_intensity, pheromone_intensity(robot_state.patience))
+        } else if (robot_state.role == "detractor"){
+            new_cell_state.cautionary_intensity = cell_cautionary_intensity   # Detractors do not affect cautionary pheromone
         }
     
     } else {    # If the cell is empty
         new_cell_state.type = robot_state.dropped_pheromone
         new_cell_state.intensity = pheromone_intensity(steps_since_poi)
+
+        if (robot_state.role == "cooperator"){
+            new_cell_state.cautionary_intensity = pheromone_intensity(robot_state.patience)
+        } else if (robot_state.role == "detractor"){
+            new_cell_state.cautionary_intensity = 0.0   # Detractors do not deposit cautionary pheromone
+        }
     }
     
-    pheromone_grid.put(last_cell_index, {.timestamp = step_count, .type = new_cell_state.type, .intensity = new_cell_state.intensity}) # Share timestamp so that the next one can calculate the evaporation that occurs
+    ## Share the new cell state with the swarm
+    pheromone_grid.put(last_cell_index, {.timestamp = step_count, .type = new_cell_state.type, .intensity = new_cell_state.intensity, .cautionary_intensity = new_cell_state.cautionary_intensity}) # Share timestamp so that the next one can calculate the evaporation that occurs
 }
 
 function pheromone_intensity(steps_number){
@@ -216,8 +238,26 @@ function pheromone_evaporation(intensity, steps_number){
     # Return the pheromone intensity with the evaporation that has occurred since the last deposit
     # Equation (2) implementation
     var new_intensity = intensity - WORLD_DATA.EVAPORATION_RATE * steps_number
-    if (new_intensity < 0){new_intensity = 0}
+    if (new_intensity < 0){new_intensity = 0.0}
     return (intensity - WORLD_DATA.EVAPORATION_RATE * steps_number)
+}
+
+function compute_patience(food_presence){
+    # Update robot patience according to the cell state
+
+    if (food_presence){ # Food pheromone --> decrease patience until 0
+        new_patience = robot_state.patience - (WORLD_DATA.PATIENCE_MAX / WORLD_DATA.REFILL_AMOUNT_STEPS)
+    } else {    # No food pheromone --> increase patience until its maximum value
+        new_patience = robot_state.patience + (WORLD_DATA.PATIENCE_MAX / WORLD_DATA.REFILL_AMOUNT_STEPS)
+    }
+
+    if (new_patience < 0.0){
+        robot_state.patience = 0.0
+    } else if (new_patience > WORLD_DATA.PATIENCE_MAX){
+        robot_state.patience = WORLD_DATA.PATIENCE_MAX
+    } else {
+        robot_state.patience = new_patience
+    }
 }
 
 function robot_motion(){
@@ -318,6 +358,7 @@ function log_data(){
     ",Y=", last_cell_position.y,
     ",role=", robot_state.role,
     ",dropped_pheromone=", robot_state.dropped_pheromone,
-    ",last_poi_timestamp=", robot_state.last_poi_timestamp
+    ",last_poi_timestamp=", robot_state.last_poi_timestamp,
+    ",patience=", robot_state.patience
     ,"}")
 }
