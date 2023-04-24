@@ -298,10 +298,19 @@ function robot_motion(){
                 } else if (probed_cell_state != nil){  # Check if cell contains pheromone
                     var steps_since_last_deposit = step_count - probed_cell_state.timestamp
                     var probed_cell_intensity = pheromone_evaporation(probed_cell_state.intensity, steps_since_last_deposit)    # Compute intensity after evaporation
+                    var probed_cell_cautionary_intensity = pheromone_evaporation(probed_cell_state.cautionary_intensity, steps_since_last_deposit)
                     if (probed_cell_state.type == robot_state.tracked_pheromone){   # Cell contains the desired pheromone
                         if (probed_cell_intensity > max_probed_intensity){
-                            max_probed_intensity = probed_cell_intensity
-                            robot_global_direction = probe_vector_direction + pose.orientation.yaw
+                            if (robot_state.role == "cooperator"){
+                                if (probed_cell_intensity > probed_cell_cautionary_intensity){  # Cooperator, keep the cell only if pheromone intensity > cautionary intensity
+                                    max_probed_intensity = probed_cell_intensity
+                                    robot_global_direction = probe_vector_direction + pose.orientation.yaw
+                                }
+
+                            } else if (robot_state.role == "detractor") {
+                                max_probed_intensity = probed_cell_intensity
+                                robot_global_direction = probe_vector_direction + pose.orientation.yaw
+                            }
                         }
                     }
                 }
