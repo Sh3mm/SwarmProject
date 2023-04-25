@@ -7,6 +7,8 @@
 # Build files
 
 **/build/
+data/
+logs/
 launch/autogenColony.argos
 **/__pycache__/
 
