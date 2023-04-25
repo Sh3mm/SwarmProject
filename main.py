@@ -1,4 +1,6 @@
 import python_scripts as ps
+import time
+from threading import Thread
 from pathlib import Path
 import os
 import argparse
@@ -11,17 +13,29 @@ def main(args):
         dirs = Path("experiments").iterdir()
 
     for file in dirs:
-        log_file = f"logs/{file.name}"
+        # log setup
+        log_file = f"logs/{file.stem}.log"
+        Path("logs").mkdir(exist_ok=True)
+        Path("data").mkdir(exist_ok=True)
+
         # setting up the argos file
         configs = ps.get_config(file)
         ps.from_template("launch/TEMPLATE.argos", configs, headless=args.headless)
 
         # executing the sim
-        Path("logs").mkdir(exist_ok=True)
-        os.system(f"./run.sh launch/autogenColony.argos {log_file}")
+        thread = Thread(target=lambda: os.system(f"./run.sh launch/autogenColony.argos {log_file}"))
+        print('starting experiment...')
+        thread.start()
+        print('started')
+        thread.join(timeout=60 * int(configs['STOP_CONDITIONS']['@TIME']))
+        print('experiment finished')
+        time.sleep(.1)
+
 
         # collecting & treating the logs
+        json_file = f"data/{file.stem}.json"
         data = ps.parse_logs(log_file)
+        ps.save_logs(json_file, data)
 
 
 if __name__ == '__main__':

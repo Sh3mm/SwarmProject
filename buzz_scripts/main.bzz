@@ -362,12 +362,12 @@ function CA(){
 
 function log_data(){
     var last_cell_position = get_cell_position(last_cell_index)
-    log(step_count, ":", id, ":{",
-    "X=", last_cell_position.x,
-    ",Y=", last_cell_position.y,
-    ",role=", robot_state.role,
-    ",dropped_pheromone=", robot_state.dropped_pheromone,
-    ",last_poi_timestamp=", robot_state.last_poi_timestamp,
-    ",patience=", robot_state.patience
+    log(step_count, "|", id, "|{",
+    '"X":', last_cell_position.x,
+    ',"Y":', last_cell_position.y,
+    ',"role":', '"', robot_state.role, '"',
+    ',"dropped_pheromone":', '"', robot_state.dropped_pheromone, '"',
+    ',"last_poi_timestamp":', robot_state.last_poi_timestamp,
+    ',"patience":', robot_state.patience
     ,"}")
 }
