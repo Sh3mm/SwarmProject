@@ -6,7 +6,7 @@
       EVAPORATION_RATE="1.0"
       KHEPERA_NB="12"
       T_ATTACK="100"
-      PATIENCE_MAX="1.0"
+      PATIENCE_MAX="300.0"
       REFILL_AMOUNT_STEPS="100">
     <WORLD_CENTER X="0.0" Y="0.0"/>
     <POI_AREA>
