@@ -15,6 +15,6 @@
     </POI_AREA>
     <STOP_CONDITIONS
             TIME="30"
-            STEP="100"
+            STEP="1000"
     />
 </data>
