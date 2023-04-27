@@ -11,7 +11,7 @@
       COMM_RANGE="1000">
     <WORLD_CENTER X="0.0" Y="0.0"/>
     <POI_AREA>
-        <HOME X="0.0" Y="0.0" RADIUS="0.3"/>
-        <GOAL X="-3.0" Y="3.0" RADIUS="0.3"/>
+        <HOME X="0.0" Y="0.0" RADIUS="0.4"/>
+        <GOAL X="-4.0" Y="4.0" RADIUS="0.3"/>
     </POI_AREA>
 </data>
