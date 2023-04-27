@@ -243,21 +243,22 @@ function pheromone_evaporation(intensity, steps_number){
 }
 
 function compute_patience(food_presence){
-    # Update robot patience according to the cell state
-
-    if (food_presence){ # Food pheromone --> decrease patience until 0
-        new_patience = robot_state.patience - 3 * (WORLD_DATA.PATIENCE_MAX / WORLD_DATA.REFILL_AMOUNT_STEPS)
-    } else {    # No food pheromone --> increase patience until its maximum value
-        new_patience = robot_state.patience + (WORLD_DATA.PATIENCE_MAX / WORLD_DATA.REFILL_AMOUNT_STEPS)
-    }
-
-    if (new_patience < 0.0){
-        robot_state.patience = 0.0
-    } else if (new_patience > WORLD_DATA.PATIENCE_MAX){
-        robot_state.patience = WORLD_DATA.PATIENCE_MAX
-    } else {
-        robot_state.patience = new_patience
-    }
+	return WORLD_DATA.PATIENCE_MAX
+#    # Update robot patience according to the cell state
+#
+#    if (food_presence){ # Food pheromone --> decrease patience until 0
+#        new_patience = robot_state.patience - 3 * (WORLD_DATA.PATIENCE_MAX / WORLD_DATA.REFILL_AMOUNT_STEPS)
+#    } else {    # No food pheromone --> increase patience until its maximum value
+#        new_patience = robot_state.patience + (WORLD_DATA.PATIENCE_MAX / WORLD_DATA.REFILL_AMOUNT_STEPS)
+#    }
+#
+#    if (new_patience < 0.0){
+#        robot_state.patience = 0.0
+#    } else if (new_patience > WORLD_DATA.PATIENCE_MAX){
+#       robot_state.patience = WORLD_DATA.PATIENCE_MAX
+#   } else {
+#       robot_state.patience = new_patience
+#    }
 }
 
 function robot_motion(){
