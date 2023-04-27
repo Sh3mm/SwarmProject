@@ -1,14 +1,14 @@
 <data WORLD_LENGTH="10.0"
       WORLD_HEIGHT="10.0"
       CELL_SIZE="0.14"
-      DETRACTOR_FRACTION="0.3"
+      DETRACTOR_FRACTION="0"
       LAMBDA = "0.01"
       EVAPORATION_RATE="1.0"
-      KHEPERA_NB="12"
+      KHEPERA_NB="2"
       T_ATTACK="100"
       PATIENCE_MAX="300.0"
       REFILL_AMOUNT_STEPS="100"
-      COMM_RANGE="10">
+      COMM_RANGE="1000">
     <WORLD_CENTER X="0.0" Y="0.0"/>
     <POI_AREA>
         <HOME X="0.0" Y="0.0" RADIUS="0.3"/>
