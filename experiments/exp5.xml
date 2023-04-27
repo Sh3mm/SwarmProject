@@ -1,7 +1,7 @@
 <data WORLD_LENGTH="10.0"
       WORLD_HEIGHT="10.0"
       CELL_SIZE="0.14"
-      DETRACTOR_FRACTION="0.0"
+      DETRACTOR_FRACTION="0"
       LAMBDA = "0.01"
       EVAPORATION_RATE="1.0"
       KHEPERA_NB="12"
@@ -11,11 +11,7 @@
       COMM_RANGE="10">
     <WORLD_CENTER X="0.0" Y="0.0"/>
     <POI_AREA>
-        <HOME X="0.0" Y="0.0" RADIUS="0.3"/>
-        <GOAL X="-3.0" Y="3.0" RADIUS="0.3"/>
+        <HOME X="0.0" Y="0.0" RADIUS="0.4"/>
+        <GOAL X="-4.0" Y="4.0" RADIUS="0.3"/>
     </POI_AREA>
-    <STOP_CONDITIONS
-            TIME="30"
-            STEP="1000"
-    />
 </data>
