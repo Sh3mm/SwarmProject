@@ -7,6 +7,7 @@ TEMPLATE_VARS = {
     # robot info
     '$$NUMBER$$': lambda d: d['@KHEPERA_NB'],
     # argos input
+    '$$COMM_RANGE$$': lambda d: d['@COMM_RANGE'],
     '$$MAX_STEP$$': lambda d: int(d['STOP_CONDITIONS']['@STEP']) // 10,
     '$$DATA$$': lambda d: d['DATA'],
 

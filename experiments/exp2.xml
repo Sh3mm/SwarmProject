@@ -14,4 +14,8 @@
         <HOME X="0.0" Y="0.0" RADIUS="0.4"/>
         <GOAL X="-4.0" Y="4.0" RADIUS="0.3"/>
     </POI_AREA>
+    <STOP_CONDITIONS
+            TIME="30"
+            STEP="2000"
+    />
 </data>

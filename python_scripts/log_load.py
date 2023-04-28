@@ -27,7 +27,7 @@ def parse_logs(log_file: str):
             }
             data.update(json.loads(line[3 if has_type else 2]))
             usable_data.append(data)
-        except (json.JSONDecodeError, IndexError):
+        except:
             pass
 
     return usable_data

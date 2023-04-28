@@ -368,6 +368,6 @@ function log_data(){
     ',"role":', '"', robot_state.role, '"',
     ',"dropped_pheromone":', '"', robot_state.dropped_pheromone, '"',
     ',"last_poi_timestamp":', robot_state.last_poi_timestamp,
-    ',"patience":', robot_state.patience
+    ',"patience":', '"', robot_state.patience, '"'
     ,"}")
 }

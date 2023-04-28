@@ -66,7 +66,7 @@
       <position method="uniform" min="$$HOME_MIN_X$$,$$HOME_MIN_Y$$,0" max="$$HOME_MAX_X$$,$$HOME_MAX_Y$$,0" />
       <orientation method="gaussian" mean="0,0,0" std_dev="360,0,0" />
       <entity quantity="$$NUMBER$$" max_trials="100">
-        <kheperaiv id="kiv" rab_data_size="200" rab_range="1000">
+        <kheperaiv id="kiv" rab_data_size="200" rab_range="$$COMM_RANGE$$">
           <controller config="ant" />
         </kheperaiv>
       </entity>
